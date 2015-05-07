@@ -68,17 +68,11 @@ ALLEGRO_COLOR RED, BLACK, ORANGE;
 #define DISPLAYHEIGHT 600
 
 //Offset do ecra
-float offsetX = 0;
-float offsetY = 0;
+float offsetX = 0.12;
+float offsetY = 0.12;
 
 // *********************************************************************************************************** //
 // ESTRUTURAS DE DADOS //
-
-// Descreve uma tile do mapa
-typedef struct tile
-{
-	ALLEGRO_BITMAP *pict; // pointer to the bitmap of the tile
-}* Tile;
 
 //Descreve uma quinta
 typedef struct farm
@@ -87,6 +81,8 @@ typedef struct farm
 	int i, j; //Posicao da quinta no mapa
 	int timer; //Contador de há quanto tempo a quinta está no estado atual
 	int phase; //Fase em que a quinta se encontra (1, 2, 3)
+	int minTimer; //Tempo necessário para passar para a próxima fase
+	char *name;
 	struct farm *next; //Apontador para o elemento seguinte
 }* Farm;
 
@@ -131,7 +127,7 @@ int mapDef[MAPWIDTH][MAPHEIGHT] = { { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
 									{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } };
 
 //Matriz que guarda os tiles do mapa
-Tile mapa[MAPWIDTH][MAPHEIGHT];
+ALLEGRO_BITMAP * mapa[MAPWIDTH][MAPHEIGHT];
 
 //Lista ligada de quintas vazia
 Farm quintas = NULL;
@@ -224,84 +220,83 @@ void LoadAssets(){
 
 //Criar o mapa
 void UpdateMap(){
+	
 	for (int i = 0; i < MAPWIDTH; i++){
 		for (int j = 0; j < MAPHEIGHT; j++){
-			Tile tile = (Tile)malloc(sizeof(struct tile));
 			switch (mapDef[i][j])
 			{
-			case 0: tile->pict = water;
+			case 0: mapa[i][j] = water;
 				break;
-			case 1: tile->pict = grass;
+			case 1: mapa[i][j] = grass;
 				break;
-			case 2: tile->pict = tree1;
+			case 2: mapa[i][j] = tree1;
 				break;
-			case 3: tile->pict = tree2;
+			case 3: mapa[i][j] = tree2;
 				break;
-			case 4: tile->pict = tree3;
+			case 4: mapa[i][j] = tree3;
 				break;
-			case 5: tile->pict = tree4;
+			case 5: mapa[i][j] = tree4;
 				break;
-			case 6: tile->pict = tree5;
+			case 6: mapa[i][j] = tree5;
 				break;
-			case 7: tile->pict = tree6;
+			case 7: mapa[i][j] = tree6;
 				break;
-			case 8: tile->pict = tree7;
+			case 8: mapa[i][j] = tree7;
 				break;
-			case 9: tile->pict = rock1;
+			case 9: mapa[i][j] = rock1;
 				break;
-			case 10: tile->pict = rock2;
+			case 10: mapa[i][j] = rock2;
 				break;
-			case 11: tile->pict = rock3;
+			case 11: mapa[i][j] = rock3;
 				break;
-			case 12: tile->pict = chopped_trees;
+			case 12: mapa[i][j] = chopped_trees;
 				break;
-			case 14: tile->pict = farm1_1;
+			case 14: mapa[i][j] = farm1_1;
 				break;
-			case 15: tile->pict = farm1_2;
+			case 15: mapa[i][j] = farm1_2;
 				break;
-			case 16: tile->pict = farm1_3;
+			case 16: mapa[i][j] = farm1_3;
 				break;
-			case 17: tile->pict = farm2_1;
+			case 17: mapa[i][j] = farm2_1;
 				break;
-			case 18: tile->pict = farm2_2;
+			case 18: mapa[i][j] = farm2_2;
 				break;
-			case 19: tile->pict = farm2_3;
+			case 19: mapa[i][j] = farm2_3;
 				break;
-			case 20: tile->pict = farm3_1;
+			case 20: mapa[i][j] = farm3_1;
 				break;
-			case 21: tile->pict = farm3_2;
+			case 21: mapa[i][j] = farm3_2;
 				break;
-			case 22: tile->pict = farm3_3;
+			case 22: mapa[i][j] = farm3_3;
 				break;
-			case 23: tile->pict = farm4_1;
+			case 23: mapa[i][j] = farm4_1;
 				break;
-			case 24: tile->pict = farm4_2;
+			case 24: mapa[i][j] = farm4_2;
 				break;
-			case 25: tile->pict = farm4_3;
+			case 25: mapa[i][j] = farm4_3;
 				break;
-			case 26: tile->pict = farm5_1;
+			case 26: mapa[i][j] = farm5_1;
 				break;
-			case 27: tile->pict = farm5_2;
+			case 27: mapa[i][j] = farm5_2;
 				break;
-			case 28: tile->pict = farm5_3;
+			case 28: mapa[i][j] = farm5_3;
 				break;
-			case 29: tile->pict = farm6_1;
+			case 29: mapa[i][j] = farm6_1;
 				break;
-			case 30: tile->pict = farm6_2;
+			case 30: mapa[i][j] = farm6_2;
 				break;
-			case 31: tile->pict = farm6_3;
+			case 31: mapa[i][j] = farm6_3;
 				break;
-			case 32: tile->pict = farm7_1;
+			case 32: mapa[i][j] = farm7_1;
 				break;
-			case 33: tile->pict = farm7_2;
+			case 33: mapa[i][j] = farm7_2;
 				break;
-			case 34: tile->pict = farm7_3;
+			case 34: mapa[i][j] = farm7_3;
 				break;
 			default:
-				tile->pict = grass;
+				mapa[i][j] = grass;
 				break;
 			}
-			mapa[i][j] = tile;
 		}
 	}
 }
@@ -312,6 +307,41 @@ Farm InsertFarm(Farm endereco, int i, int j, int type){
 	//Devolve o endereço de memória do espaço alocado
 	Farm farm = (Farm)malloc(sizeof(struct farm));
 	//Dar os valores ao farm
+
+	switch (type)
+	{
+	case 14:
+		farm->minTimer = 40000;
+		farm->name = _strdup("Beterraba");
+		break;
+	case 17:
+		farm->minTimer = 20000;
+		farm->name = _strdup("Cenoura");
+		break;
+	case 20:
+		farm->minTimer = 50000;
+		farm->name = _strdup("Nabo");
+		break;
+	case 23:
+		farm->minTimer = 30000;
+		farm->name = _strdup("Batata");
+		break;
+	case 26:
+		farm->minTimer = 25000;
+		farm->name = _strdup("Pimento");
+		break;
+	case 29:
+		farm->minTimer = 15000;
+		farm->name = _strdup("Morango");
+		break;
+	case 32:
+		farm->minTimer = 40000;
+		farm->name = _strdup("Milho");
+		break;
+	default:
+		break;
+	}
+
 	farm->i = i;
 	farm->j = j;
 	farm->phase = 0;
@@ -329,10 +359,12 @@ void UpdateFarms(Farm endereco){
 		//incrementar timer
 		endereco->timer++;
 		//passar fase?
-		if (endereco->timer > 1000){
+		if (endereco->timer > endereco->minTimer){
 			if (endereco->phase < 2){
+				//pronta para crescer
 				endereco->phase++;
 				endereco->timer = 0;
+				//alterar o tipo de sprite no mapa
 				mapDef[endereco->i][endereco->j] = endereco->type + endereco->phase;
 			}
 		}
@@ -345,7 +377,7 @@ void DrawMap(){
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 	for (int i = 0; i < MAPWIDTH; i++){
 		for (int j = 0; j < MAPHEIGHT; j++){
-			al_draw_bitmap(mapa[j][i]->pict, i * TILEWIDTH + offsetX * TILEWIDTH, j * TILEHEIGHT + offsetY * TILEHEIGHT, 0);
+			al_draw_bitmap(mapa[j][i], i * TILEWIDTH + offsetX * TILEWIDTH, j * TILEHEIGHT + offsetY * TILEHEIGHT, 0);
 		}
 	}
 	al_flip_display();
@@ -358,6 +390,35 @@ void ShutDown(){
 	}
 	if (font){
 		al_destroy_font(font);
+	}
+}
+
+void UpdateInput(){
+	al_get_keyboard_state(&state);
+	//Escape
+	if (al_key_down(&state, ALLEGRO_KEY_ESCAPE)){
+		exitGame = 1;
+		ShutDown();
+	}
+	//Right
+	if (al_key_down(&state, ALLEGRO_KEY_D)){
+		if (-(offsetX * TILEWIDTH) < (MAPWIDTH * TILEWIDTH - DISPLAYWIDTH) + 2)
+			offsetX -= 0.1;
+	}
+	//Left
+	if (al_key_down(&state, ALLEGRO_KEY_A)){
+		if (-(offsetX * TILEWIDTH) > -2)
+			offsetX += 0.1;
+	}
+	//Down
+	if (al_key_down(&state, ALLEGRO_KEY_S)){
+		if (-(offsetY * TILEHEIGHT) < (MAPHEIGHT * TILEHEIGHT - DISPLAYHEIGHT) + 2.5)
+			offsetY -= 0.05;
+	}
+	//Up
+	if (al_key_down(&state, ALLEGRO_KEY_W)){
+		if (-(offsetY * TILEHEIGHT) > -2.5)
+			offsetY += 0.05;
 	}
 }
 
@@ -387,27 +448,7 @@ int main(int argc, char **argv){
 
 		DrawMap();
 
-		al_get_keyboard_state(&state);
-		if (al_key_down(&state, ALLEGRO_KEY_ESCAPE)){
-			exitGame = 1;
-			ShutDown();
-		}
-		if (al_key_down(&state, ALLEGRO_KEY_D)){
-			printf("offsetX * TILEWIDTH: %f\n", offsetX * TILEWIDTH);
-			if (-(offsetX * TILEWIDTH) < (MAPWIDTH * TILEWIDTH - DISPLAYWIDTH) + 2)
-				offsetX -= 0.1;
-		}
-		if (al_key_down(&state, ALLEGRO_KEY_A)){
-			printf("offsetX * TILEWIDTH: %f\n", offsetX * TILEWIDTH);
-			if (-(offsetX * TILEWIDTH) > -2)
-				offsetX += 0.1;
-		}
-		if (al_key_down(&state, ALLEGRO_KEY_S)){
-			offsetY -= 0.05;
-		}
-		if (al_key_down(&state, ALLEGRO_KEY_W)){
-			offsetY += 0.05;
-		}
+		UpdateInput();
 	}
 
 }
