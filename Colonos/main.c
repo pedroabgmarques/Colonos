@@ -64,8 +64,8 @@ ALLEGRO_COLOR RED, BLACK, ORANGE;
 #define MAPHEIGHT 35
 #define TILEWIDTH 32
 #define TILEHEIGHT 32
-#define DISPLAYWIDTH 640
-#define DISPLAYHEIGHT 480
+#define DISPLAYWIDTH 800
+#define DISPLAYHEIGHT 600
 
 //Offset do ecra
 float offsetX = 0;
@@ -136,7 +136,7 @@ Tile mapa[MAPWIDTH][MAPHEIGHT];
 //Lista ligada de quintas vazia
 Farm quintas = NULL;
 
-// *********************************************************************************************************** //
+//***********************************************************************************************************//
 
 //Inicialização do Allegro
 int InitializeAllegro(){
@@ -395,12 +395,12 @@ int main(int argc, char **argv){
 		if (al_key_down(&state, ALLEGRO_KEY_D)){
 			printf("offsetX * TILEWIDTH: %f\n", offsetX * TILEWIDTH);
 			if (-(offsetX * TILEWIDTH) < (MAPWIDTH * TILEWIDTH - DISPLAYWIDTH) + 2)
-				offsetX -= 0.05;
+				offsetX -= 0.1;
 		}
 		if (al_key_down(&state, ALLEGRO_KEY_A)){
 			printf("offsetX * TILEWIDTH: %f\n", offsetX * TILEWIDTH);
-			if (-(offsetX * TILEWIDTH) < (MAPWIDTH * TILEWIDTH - DISPLAYWIDTH))
-				offsetX += 0.05;
+			if (-(offsetX * TILEWIDTH) > -2)
+				offsetX += 0.1;
 		}
 		if (al_key_down(&state, ALLEGRO_KEY_S)){
 			offsetY -= 0.05;
