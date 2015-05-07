@@ -67,8 +67,8 @@ ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN;
 #define MAPHEIGHT 35
 #define TILEWIDTH 32
 #define TILEHEIGHT 32
-#define DISPLAYWIDTH 800
-#define DISPLAYHEIGHT 600
+#define DISPLAYWIDTH 1024
+#define DISPLAYHEIGHT 640
 
 //Offset do ecra
 float offsetX = 0;
@@ -388,13 +388,11 @@ void UpdateFarms(Farm endereco){
 
 //Desenhar o mapa
 void DrawMap(){
-	
 	for (int i = 0; i < MAPWIDTH; i++){
 		for (int j = 0; j < MAPHEIGHT; j++){
 			al_draw_bitmap(mapa[j][i], i * TILEWIDTH + offsetX, j * TILEHEIGHT + offsetY, 0);
 		}
 	}
-	
 }
 
 //Destroi os objetos criados
@@ -441,8 +439,6 @@ void UpdateInput(){
 		}
 		KBLimitCounter = 0;
 	}
-	
-
 	KBLimitCounter++;
 
 
