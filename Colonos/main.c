@@ -4,16 +4,19 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_image.h>
 
+
 //Variáveis Globais
 //ALLEGRO
 ALLEGRO_FONT *font;
 ALLEGRO_KEYBOARD_STATE state;
+ALLEGRO_MOUSE_STATE mouseState;
 //OUTRAS
 int exitGame = 0;
 
@@ -57,7 +60,7 @@ ALLEGRO_BITMAP *farm7_2 = NULL;
 ALLEGRO_BITMAP *farm7_3 = NULL;
 
 //Cores
-ALLEGRO_COLOR RED, BLACK, ORANGE;
+ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN;
 
 //Tamanho do mapa
 #define MAPWIDTH 35
@@ -68,8 +71,12 @@ ALLEGRO_COLOR RED, BLACK, ORANGE;
 #define DISPLAYHEIGHT 600
 
 //Offset do ecra
-float offsetX = 0.12;
-float offsetY = 0.12;
+float offsetX = 0;
+float offsetY = 0;
+
+//limitador de input do teclado
+int KBLimit = 10;
+int KBLimitCounter = 0;
 
 // *********************************************************************************************************** //
 // ESTRUTURAS DE DADOS //
@@ -156,6 +163,12 @@ int InitializeAllegro(){
 		fprintf(stderr, "failed to initialize primitives addon!\n");
 		return -1;
 	}
+	//Inicializar o rato
+	if (!al_install_mouse()) {
+		fprintf(stderr, "failed to initialize the mouse!\n");
+		return -1;
+	}
+
 	//Titulo da janela
 	al_set_window_title(display, "Colonos");
 	//Inicializar o keyboard
@@ -175,6 +188,7 @@ int InitializeAllegro(){
 	RED = al_map_rgb(255, 0, 0);
 	BLACK = al_map_rgb(0, 0, 0);
 	ORANGE = al_map_rgb(255, 165, 0);
+	GREEN = al_map_rgb(0, 128, 0);
 
 	return 1;
 
@@ -374,17 +388,18 @@ void UpdateFarms(Farm endereco){
 
 //Desenhar o mapa
 void DrawMap(){
-	al_clear_to_color(al_map_rgb(0, 0, 0));
+	
 	for (int i = 0; i < MAPWIDTH; i++){
 		for (int j = 0; j < MAPHEIGHT; j++){
-			al_draw_bitmap(mapa[j][i], i * TILEWIDTH + offsetX * TILEWIDTH, j * TILEHEIGHT + offsetY * TILEHEIGHT, 0);
+			al_draw_bitmap(mapa[j][i], i * TILEWIDTH + offsetX, j * TILEHEIGHT + offsetY, 0);
 		}
 	}
-	al_flip_display();
+	
 }
 
 //Destroi os objetos criados
 void ShutDown(){
+
 	if (display){
 		al_destroy_display(display);
 	}
@@ -394,32 +409,54 @@ void ShutDown(){
 }
 
 void UpdateInput(){
+
+
 	al_get_keyboard_state(&state);
 	//Escape
 	if (al_key_down(&state, ALLEGRO_KEY_ESCAPE)){
 		exitGame = 1;
 		ShutDown();
 	}
-	//Right
-	if (al_key_down(&state, ALLEGRO_KEY_D)){
-		if (-(offsetX * TILEWIDTH) < (MAPWIDTH * TILEWIDTH - DISPLAYWIDTH) + 2)
-			offsetX -= 0.1;
+
+	if (KBLimitCounter > KBLimit){
+		//Right
+		if (al_key_down(&state, ALLEGRO_KEY_D)){
+			if (-(offsetX) < (MAPWIDTH * TILEWIDTH - DISPLAYWIDTH))
+				offsetX -= TILEWIDTH;
+		}
+		//Left
+		if (al_key_down(&state, ALLEGRO_KEY_A)){
+			if (-(offsetX) > 0)
+				offsetX += TILEWIDTH;
+		}
+		//Down
+		if (al_key_down(&state, ALLEGRO_KEY_S)){
+			if (-(offsetY) < (MAPHEIGHT * TILEHEIGHT - DISPLAYHEIGHT) - MAPHEIGHT)
+				offsetY -= TILEHEIGHT;
+		}
+		//Up
+		if (al_key_down(&state, ALLEGRO_KEY_W)){
+			if (-(offsetY) > 0)
+				offsetY += TILEHEIGHT;
+		}
+		KBLimitCounter = 0;
 	}
-	//Left
-	if (al_key_down(&state, ALLEGRO_KEY_A)){
-		if (-(offsetX * TILEWIDTH) > -2)
-			offsetX += 0.1;
+	
+
+	KBLimitCounter++;
+
+
+	//RATO
+	al_get_mouse_state(&mouseState);
+	if (!exitGame) {
+		float x, y;
+		x = (round(mouseState.x / TILEWIDTH)  * TILEWIDTH);
+		y = (round(mouseState.y / TILEHEIGHT)  * TILEHEIGHT);
+
+		al_draw_rectangle(x, y, x + TILEWIDTH, y + TILEHEIGHT,
+			GREEN, 2);
 	}
-	//Down
-	if (al_key_down(&state, ALLEGRO_KEY_S)){
-		if (-(offsetY * TILEHEIGHT) < (MAPHEIGHT * TILEHEIGHT - DISPLAYHEIGHT) + 2.5)
-			offsetY -= 0.05;
-	}
-	//Up
-	if (al_key_down(&state, ALLEGRO_KEY_W)){
-		if (-(offsetY * TILEHEIGHT) > -2.5)
-			offsetY += 0.05;
-	}
+		
 }
 
 int main(int argc, char **argv){
@@ -446,9 +483,13 @@ int main(int argc, char **argv){
 
 		UpdateFarms(quintas);
 
-		DrawMap();
+		al_clear_to_color(al_map_rgb(0, 0, 0));
 
-		UpdateInput();
+			DrawMap();
+
+			UpdateInput();
+
+		al_flip_display();
 	}
 
 }
