@@ -25,7 +25,7 @@ int exitGame = 0;
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
 
-//Assets
+//Assets - Sprites
 ALLEGRO_BITMAP *water = NULL;
 ALLEGRO_BITMAP *tree7 = NULL;
 ALLEGRO_BITMAP *tree6 = NULL;
@@ -61,6 +61,9 @@ ALLEGRO_BITMAP *farm7_1 = NULL;
 ALLEGRO_BITMAP *farm7_2 = NULL;
 ALLEGRO_BITMAP *farm7_3 = NULL;
 
+//Assets - Animated sprites
+ALLEGRO_BITMAP *men1, *men2, *men3, *men4, *woman1, *woman2, *woman3, *woman4 = NULL;
+
 //Cores
 ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN;
 
@@ -71,6 +74,9 @@ ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN;
 #define TILEHEIGHT 32
 #define DISPLAYWIDTH 1024
 #define DISPLAYHEIGHT 640
+
+//Velocidades
+#define VELOCIDADE_BONECOS 0.07
 
 //Offset do ecra
 float offsetX = 0;
@@ -94,6 +100,18 @@ typedef struct farm
 	char *name;
 	struct farm *next; //Apontador para o elemento seguinte
 }* Farm;
+
+//Descreve um bonequinho
+typedef struct character
+{
+	ALLEGRO_BITMAP *spriteSheet; //Spritesheet que contém a animação desta personagem
+	int movimento; //0 - Parado, 1 - Movimento
+	int direcao; //0 - Baixo; 1 - Esquerda; 2 - Direita; 3 - Cima
+	float x, y; //Posicao
+	int animationFrame;
+	int animationTimer;
+	struct character *next; //Apontador para o elemento seguinte
+}* Character;
 
 //
 
@@ -141,6 +159,9 @@ ALLEGRO_BITMAP * mapa[MAPWIDTH][MAPHEIGHT];
 //Lista ligada de quintas vazia
 Farm quintas = NULL;
 
+//Lista ligada de bonequinhos vazia
+Character bonequinhos = NULL;
+
 //***********************************************************************************************************//
 
 //Inicialização do Allegro
@@ -169,7 +190,7 @@ int InitializeAllegro(){
 	mouseButtons = al_install_mouse();
 	//Inicializar som 
 	if (!al_install_audio()) {
-		fprintf(stderr, "failed to initialize the timer!\n");
+		fprintf(stderr, "failed to initialize the audio addon!\n");
 		return -1;
 	}
 
@@ -234,6 +255,15 @@ void LoadAssets(){
 	farm7_1 = al_load_bitmap("assets/farm7_1.png");
 	farm7_2 = al_load_bitmap("assets/farm7_2.png");
 	farm7_3 = al_load_bitmap("assets/farm7_3.png");
+
+	men1 = al_load_bitmap("assets/characters/men1.png");
+	men2 = al_load_bitmap("assets/characters/men2.png");
+	men3 = al_load_bitmap("assets/characters/men3.png");
+	men4 = al_load_bitmap("assets/characters/men4.png");
+	woman1 = al_load_bitmap("assets/characters/woman1.png");
+	woman2 = al_load_bitmap("assets/characters/woman2.png");
+	woman3 = al_load_bitmap("assets/characters/woman3.png");
+	woman4 = al_load_bitmap("assets/characters/woman4.png");
 }
 
 //Criar o mapa
@@ -399,6 +429,65 @@ void DrawMap(){
 	}
 }
 
+Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, float y, int direcao){
+	Character boneco = (Character)malloc(sizeof(struct character));
+	boneco->x = x;
+	boneco->y = y;
+	boneco->spriteSheet = sprite;
+	boneco->movimento = 1;
+	boneco->direcao = direcao;
+	boneco->animationFrame = 0;
+	boneco->animationTimer = 0;
+	boneco->next = endereco;
+	return boneco;
+}
+
+//Atualizar os bonequinhos
+void UpdateCharacters(Character endereco){
+	if (endereco->movimento){
+		endereco->animationTimer++;
+		if (endereco->animationTimer > 15){
+			if (endereco->animationFrame < 3){
+				endereco->animationFrame++;
+			}
+			else{
+				endereco->animationFrame = 0;
+			}
+			endereco->animationTimer = 0;
+		}
+		switch (endereco->direcao)
+		{
+		case 0: 
+			endereco->y += VELOCIDADE_BONECOS;
+			break;
+		case 1:
+			endereco->x -= VELOCIDADE_BONECOS;
+			break;
+		case 2:
+			endereco->x += VELOCIDADE_BONECOS;
+			break;
+		case 3:
+			endereco->y -= VELOCIDADE_BONECOS;
+			break;
+		default:
+			endereco->y += VELOCIDADE_BONECOS;
+			break;
+		}
+	}
+	if (endereco->next != NULL){
+		UpdateCharacters(endereco->next);
+	}
+}
+
+//Desenhar os bonequinhos
+void DrawCharacters(Character endereco){
+	al_draw_bitmap_region(endereco->spriteSheet,
+		endereco->animationFrame * 16, endereco->direcao * 24, 16, 24, endereco->x + offsetX, endereco->y + offsetY, 0);
+	if (endereco->next != NULL){
+		DrawCharacters(endereco->next);
+	}
+}
+
 //Destroi os objetos criados
 void ShutDown(){
 
@@ -467,7 +556,6 @@ int main(int argc, char **argv){
 	//Load assets
 	LoadAssets();
 
-	Farm quintas = NULL; //lista ligada vazia
 	quintas = InsertFarm(quintas, 8, 1, 14);
 	quintas = InsertFarm(quintas, 8, 2, 17);
 	quintas = InsertFarm(quintas, 8, 2, 20);
@@ -476,6 +564,15 @@ int main(int argc, char **argv){
 	quintas = InsertFarm(quintas, 9, 3, 29);
 	quintas = InsertFarm(quintas, 10, 1, 32);
 
+	bonequinhos = InsertCharacter(bonequinhos, men1, 300, 100, 0);
+	bonequinhos = InsertCharacter(bonequinhos, woman1, 1000, 200, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men2, 320, 640, 3);
+	bonequinhos = InsertCharacter(bonequinhos, woman2, 10, 300, 2);
+	bonequinhos = InsertCharacter(bonequinhos, men3, 150, 620, 3);
+	bonequinhos = InsertCharacter(bonequinhos, woman3, 200, 330, 2);
+	bonequinhos = InsertCharacter(bonequinhos, men4, 170, 650, 3);
+	bonequinhos = InsertCharacter(bonequinhos, woman4, 190, 310, 2);
+
 	//GAME LOOP
 	while (!exitGame){
 
@@ -483,11 +580,15 @@ int main(int argc, char **argv){
 
 		UpdateFarms(quintas);
 
+		UpdateCharacters(bonequinhos);
+
 		al_clear_to_color(al_map_rgb(0, 0, 0));
 
 			DrawMap();
 
-			UpdateInput();
+			DrawCharacters(bonequinhos);
+
+			UpdateInput(); //Desenha também a grid do rato
 
 		al_flip_display();
 	}
