@@ -10,6 +10,7 @@
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_image.h>
+#include <allegro5/allegro_audio.h>
 
 
 //Variáveis Globais
@@ -17,6 +18,7 @@
 ALLEGRO_FONT *font;
 ALLEGRO_KEYBOARD_STATE state;
 ALLEGRO_MOUSE_STATE mouseState;
+int mouseButtons;
 //OUTRAS
 int exitGame = 0;
 
@@ -164,8 +166,10 @@ int InitializeAllegro(){
 		return -1;
 	}
 	//Inicializar o rato
-	if (!al_install_mouse()) {
-		fprintf(stderr, "failed to initialize the mouse!\n");
+	mouseButtons = al_install_mouse();
+	//Inicializar som 
+	if (!al_install_audio()) {
+		fprintf(stderr, "failed to initialize the timer!\n");
 		return -1;
 	}
 
