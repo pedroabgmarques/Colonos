@@ -22,6 +22,7 @@ int mouseButtons;
 //OUTRAS
 int exitGame = 0;
 const float FPS = 60;
+float x, y;
 
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
@@ -94,7 +95,7 @@ float offsetX = 0;
 float offsetY = 0;
 
 //limitador de input do teclado
-int KBLimit = 10;
+int KBLimit = 5;
 int KBLimitCounter = 0;
 
 // *********************************************************************************************************** //
@@ -630,12 +631,12 @@ void DrawNoWalkConstructionTiles(){
 	}
 }
 
-Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, float y, int direcao){
+Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, float y, int direcao, int movimento){
 	Character boneco = (Character)malloc(sizeof(struct character));
 	boneco->x = x;
 	boneco->y = y;
 	boneco->spriteSheet = sprite;
-	boneco->movimento = 1;
+	boneco->movimento = movimento;
 	boneco->direcao = direcao;
 	boneco->animationFrame = 0;
 	boneco->animationTimer = 0;
@@ -706,6 +707,47 @@ void ShutDown(){
 	}
 }
 
+void DrawHoveredTile(){
+	x = (round(mouseState.x / TILEWIDTH)  * TILEWIDTH);
+	y = (round(mouseState.y / TILEHEIGHT)  * TILEHEIGHT);
+
+	al_draw_rectangle(x, y, x + TILEWIDTH, y + TILEHEIGHT,
+		GREEN, 2);
+}
+
+//Verifica se existe colisão entre duas bounding boxes
+int bounding_box_collision(float b1_x, float b1_y, int b1_w, int b1_h, float b2_x, float b2_y, int b2_w, int b2_h)
+{
+	if ((b1_x > b2_x + b2_w - 1) || // is b1 on the right side of b2?
+		(b1_y > b2_y + b2_h - 1) || // is b1 under b2?
+		(b2_x > b1_x + b1_w - 1) || // is b2 on the right side of b1?
+		(b2_y > b1_y + b1_h - 1))   // is b2 under b1?
+	{
+		// no collision
+		return 0;
+	}
+
+	// collision
+	return 1;
+}
+
+void DrawCharacterBoundingBox(Character endereco){
+	//Posição do rato
+	x = mouseState.x;
+	y = mouseState.y;
+	
+	while (endereco != NULL){
+		if (bounding_box_collision(x, y, 10, 20, endereco->x + offsetX, endereco->y + offsetY, 16, 24)){
+			//O rato está por cima de um bonequinho!
+			al_draw_rectangle(endereco->x + offsetX, endereco->y + offsetY, endereco->x + 16 + offsetX, endereco->y + 24 + offsetY,
+				GREEN, 2);
+			break;
+		}
+		endereco = endereco->next;
+	}
+
+}
+
 void UpdateInput(){
 
 
@@ -745,12 +787,8 @@ void UpdateInput(){
 	//RATO
 	al_get_mouse_state(&mouseState);
 	if (!exitGame) {
-		float x, y;
-		x = (round(mouseState.x / TILEWIDTH)  * TILEWIDTH);
-		y = (round(mouseState.y / TILEHEIGHT)  * TILEHEIGHT);
-
-		al_draw_rectangle(x, y, x + TILEWIDTH, y + TILEHEIGHT,
-			GREEN, 2);
+		//DrawHoveredTile();
+		DrawCharacterBoundingBox(bonequinhos);
 	}
 		
 }
@@ -771,14 +809,14 @@ int main(int argc, char **argv){
 	quintas = InsertFarm(quintas, 9, 3, 29);
 	quintas = InsertFarm(quintas, 10, 1, 32);
 
-	bonequinhos = InsertCharacter(bonequinhos, men1, 300, 100, 0);
-	bonequinhos = InsertCharacter(bonequinhos, woman1, 1000, 200, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men2, 320, 640, 3);
-	bonequinhos = InsertCharacter(bonequinhos, woman2, 10, 300, 2);
-	bonequinhos = InsertCharacter(bonequinhos, men3, 150, 620, 3);
-	bonequinhos = InsertCharacter(bonequinhos, woman3, 200, 330, 2);
-	bonequinhos = InsertCharacter(bonequinhos, men4, 170, 650, 3);
-	bonequinhos = InsertCharacter(bonequinhos, woman4, 190, 310, 2);
+	bonequinhos = InsertCharacter(bonequinhos, men1, 300, 100, 1, 0);
+	bonequinhos = InsertCharacter(bonequinhos, woman1, 1000, 200, 1, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men2, 320, 640, 3, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman2, 10, 300, 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men3, 150, 620, 3, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman3, 200, 330, 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men4, 170, 650, 3, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman4, 190, 310, 2, 1);
 
 	edificios = InsertBuilding(edificios, 15, 5, 35);
 	edificios = InsertBuilding(edificios, 16, 5, 36);
