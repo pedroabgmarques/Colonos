@@ -21,9 +21,13 @@ ALLEGRO_MOUSE_STATE mouseState;
 int mouseButtons;
 //OUTRAS
 int exitGame = 0;
+const float FPS = 60;
 
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
+
+ALLEGRO_EVENT_QUEUE *event_queue = NULL;
+ALLEGRO_TIMER *timer = NULL;
 
 //Assets - Sprites
 //CENÁRIO
@@ -217,6 +221,22 @@ int InitializeAllegro(){
 		fprintf(stderr, "failed to initialize the audio addon!\n");
 		return -1;
 	}
+	//Inicializar o timer
+	timer = al_create_timer(1.0 / FPS);
+	if (!timer) {
+		fprintf(stderr, "failed to create timer!\n");
+		return -1;
+	}
+	//Inicializar a event queue
+	event_queue = al_create_event_queue();
+	if (!event_queue) {
+		fprintf(stderr, "failed to create event_queue!\n");
+		al_destroy_display(display);
+		al_destroy_timer(timer);
+		return -1;
+	}
+
+	al_register_event_source(event_queue, al_get_timer_event_source(timer));
 
 	//Titulo da janela
 	al_set_window_title(display, "Colonos");
@@ -240,6 +260,8 @@ int InitializeAllegro(){
 	GREEN = al_map_rgb(0, 128, 0);
 	YELLOW = al_map_rgb(255, 255, 0);
 	
+	al_start_timer(timer);
+
 	return 1;
 }
 
@@ -676,6 +698,12 @@ void ShutDown(){
 	if (font){
 		al_destroy_font(font);
 	}
+	if (timer){
+		al_destroy_timer(timer);
+	}
+	if (event_queue){
+		al_destroy_event_queue(event_queue);
+	}
 }
 
 void UpdateInput(){
@@ -774,25 +802,29 @@ int main(int argc, char **argv){
 	//GAME LOOP
 	while (!exitGame){
 
-		UpdateMap();
+		ALLEGRO_EVENT ev;
+		al_wait_for_event(event_queue, &ev);
 
-		UpdateFarms(quintas);
+		if (ev.type == ALLEGRO_EVENT_TIMER) {
+			UpdateMap();
 
-		UpdateCharacters(bonequinhos);
+			UpdateFarms(quintas);
 
-		UpdateBuildings(edificios);
+			UpdateCharacters(bonequinhos);
 
-		al_clear_to_color(al_map_rgb(0, 0, 0));
+			UpdateBuildings(edificios);
+
+			al_clear_to_color(al_map_rgb(0, 0, 0));
 
 			DrawMap();
-			
+
 			//DrawNoWalkConstructionTiles();
 
 			DrawCharacters(bonequinhos);
 
 			UpdateInput(); //Desenha também a grid do rato
 
-		al_flip_display();
+			al_flip_display();
+		}
 	}
-
 }
