@@ -129,13 +129,29 @@ typedef struct character
 typedef struct building
 {
 	int type; //Sprite do estado inicial
-	int i, j; //Posição do edifício no mapa
+	int x, y; //Posição do edifício no mapa
 	int timer; //Tempo passado desde o início da construção do edifício
 	int minTimer; //Tempo que o edifício demora a ser construído
 	int constructionCounter; //Vai aumentando cada vez que minTimer = timer, até ao máximo de 32 (altura da sprite)
 	struct building *next; //Apontador para o elemento seguinte
 }* Building;
 
+
+//AI - Cálculo de caminhos
+//Descreve um nó de caminho
+typedef struct node
+{
+	int x, y; //Posição do node
+	bool caminho; //Indica se esta posição é ou não caminho
+	struct node * parent; //Apontador para o node que colocou este na lista aberta
+	bool inOpenList; //Indica se está na lista aberta
+	bool inClosedList; //Indica se está na lista fechada
+	float distanceToTarget; //Distância aproximada desde este node até ao alvo
+	float distanceTravelled; //Distância já viajada da origem até este node
+	struct node * vizinhos[4]; //Apontadores para os vizinhos deste node (cima, baixo, esquerda, direita)
+	struct node * next;
+	int contadorVizinhos;
+}* Node;
 //
 
 //Matriz que define o mapa
@@ -176,7 +192,7 @@ int mapDef[MAPWIDTH][MAPHEIGHT][3] =
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
-	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } }
+	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }}
 };
 
 //Matriz que guarda os tiles do mapa
@@ -190,6 +206,367 @@ Character bonequinhos = NULL;
 
 //Lista ligada de casas vazia
 Building edificios = NULL;
+
+//Matriz de searchNodes
+Node searchNodes[MAPWIDTH][MAPHEIGHT];
+//Lista aberta de Nodes
+Node listaAberta = NULL;
+//Lista fechada de Nodes
+Node listaFechada = NULL;
+
+//***********************************************************************************************************//
+
+//***********************************************************************************************************//
+//AI - PATHFINDING
+
+//Reinicializa o estado de todos os nodes
+void ResetSearchNodes(){
+	//Eliminar todos os elementos da lista aberta
+	while (listaAberta != NULL){
+		Node aux = listaAberta->next;
+		free(listaAberta);
+		listaAberta = aux;
+	}
+	//Eliminar todos os elementos da lista fechada
+	while (listaFechada != NULL){
+		Node aux = listaFechada->next;
+		free(listaFechada);
+		listaFechada = aux;
+	}
+	//Fazer reset às propriedades dos nodes
+	for (int x = 0; x < MAPWIDTH; x++){
+		for (int y = 0; y < MAPHEIGHT; y++){
+			Node node = searchNodes[x, y];
+			if (node == NULL) {
+				continue;
+			}
+			node->inOpenList = false;
+			node->inClosedList = false;
+			node->distanceTravelled = 0;
+			node->distanceToTarget = 0;
+			node->parent = NULL;
+		}
+	}
+}
+
+Node InsertNode(Node lista, Node node){
+	Node aux = node;
+	aux->next = lista;
+	return aux;
+}
+
+//Remover elemento da lista ligada - recursivamente
+Node RemoveNode(Node enderecoInicioLista, int x, int y){
+	Node aux;
+	if (enderecoInicioLista != NULL){
+		//Lista não está vazia
+		if (enderecoInicioLista->x == x && enderecoInicioLista->y == y){
+			//encontramos o elemento a eliminar
+			aux = enderecoInicioLista->next;
+			return aux;
+		}
+		else{
+			//não é este o elemento e eliminar, continuar a recursão
+			enderecoInicioLista->next = RemoveNode(enderecoInicioLista->next, x, y);
+			return enderecoInicioLista;
+		}
+	}
+	else{
+		//Lista vazia
+		return enderecoInicioLista;
+	}
+}
+
+//Cria ou atualiza a matriz de searchnodes
+void UpdateSearchNodes(){
+	ResetSearchNodes();
+	int x, y;
+	//Criar um node para cada espaço do mapa
+	for (x = 0; x < MAPWIDTH; x++)
+	{
+		for (y = 0; y < MAPHEIGHT; y++)
+		{
+			Node node = (Node)malloc(sizeof(struct node));
+			node->x = x;
+			node->y = y;
+			node->caminho = false;
+			node->contadorVizinhos = 0;
+			node->distanceToTarget = 0;
+			node->distanceTravelled = 0;
+			node->inClosedList = false;
+			node->inOpenList = false;
+			node->next = NULL;
+			node->parent = NULL;
+
+			//Apenas é caminho se tiver 1 na segunda posição desta tile
+			node->caminho = mapDef[x][y][1] == 1;
+			//Se é possível andar neste node, guardamo-lo no array de searchNodes
+			if (node->caminho){
+				searchNodes[x][y] = node;
+			}
+			
+		}
+	}
+	//Para cada um dos nodes que criámos, vamos ligá-lo aos vizinhos
+	for (x = 0; x < MAPWIDTH; x++)
+	{
+		for (y = 0; y < MAPHEIGHT; y++)
+		{
+			Node node = searchNodes[x][y];
+			//Se não se pode andar neste node, não interessa
+			if (node == NULL || !node->caminho){
+				continue;
+			}
+			//Criamos um array com todos os possíveis vizinhos que este node pode ter
+			int vizinhos[4][4] = { 
+					{x, y - 1},
+					{x, y + 1},
+					{x - 1, y},
+					{x + 1, y}
+			};
+			//Iteramos por cada um dos possíveis vizinhos
+			for (int i = 0; i < 4; i++)
+			{
+				int vizinhoX = vizinhos[i][0];
+				int vizinhoY = vizinhos[i][1];
+
+				//Confirmar que este vizinho faz parte do mapa
+				if (vizinhoX < 0 || vizinhoX > MAPWIDTH - 1
+					|| vizinhoY < 0 || vizinhoY > MAPHEIGHT - 1){
+					continue;
+				}
+
+				Node vizinho = searchNodes[vizinhoX][vizinhoY];
+
+				//Só nos interessam vizinhos em que se possa andar
+				if (vizinho == NULL || !vizinho->caminho){
+					continue;
+				}
+				
+				node->contadorVizinhos++;
+				node->vizinhos[node->contadorVizinhos-1] = vizinho;
+			}
+		}
+	}
+
+	//DEBUG
+	//Verificar se estão a ser criados searchnodes
+	/*
+	for (int i = 0; i < MAPWIDTH; i++){
+		for (int j = 0; j < MAPHEIGHT; j++){
+			Node node = searchNodes[i][j];
+			if (node != NULL){
+				printf("%f; ", node->distanceToTarget);
+			}
+		}
+	}
+	*/
+}
+
+//Devolve uma estimativa da distância entre dois tiles
+float Heuristic(x1, y1, x2, y2){
+	return abs(x1 - x2) + abs(y1 - y2);
+}
+
+//Devolve um elemento de uma lista por indice
+Node GetIndex(Node lista, int index){
+	int contador = 0;
+	while (lista != NULL){
+		if (contador == index){
+			return lista;
+		}
+		else{
+			contador++;
+			lista = lista->next;
+		}
+	}
+	return lista;
+}
+
+//Devolve o número de elementos numa lista
+int ListCount(Node endereco){
+	if (endereco == NULL){
+		return 0;
+	}
+	else{
+		//A função invoca-se a ela própria
+		return (1 + ListCount(endereco->next));
+	}
+}
+
+//Devolve o node com distância mais pequena ao objetivo
+Node FindBestNode(){
+	Node currentTile;
+	currentTile = GetIndex(listaAberta, 0);
+	float smallestDistanceToTarget = 999999;
+	for (int i = 0; i < ListCount(listaAberta); i++){
+		Node aux = GetIndex(listaAberta, i);
+		if (aux->distanceToTarget < smallestDistanceToTarget){
+			currentTile = GetIndex(listaAberta, i);
+			smallestDistanceToTarget = currentTile->distanceToTarget;
+		}
+	}
+	return currentTile;
+}
+
+//Usa o campo parent dos nodes para refazer o caminho mais curto do end node para o start node
+//Devolve uma lista ligada de nodes a percorrer para ir da origem ao destino
+Node FindFinalPath(Node startNode, Node endNode){
+	listaFechada = InsertNode(listaFechada, endNode);
+	Node parentTile = endNode->parent;
+	//Percorrer o caminho para trás, do nó final, através do parent, até ao inicial
+	while (parentTile != startNode && parentTile != NULL && parentTile->parent != NULL){
+		listaFechada = InsertNode(listaFechada, parentTile);
+		parentTile = parentTile->parent;
+	}
+	Node finalPath = NULL;
+	//Reverter o caminho para ir do inicial ao final
+	for (int i = ListCount(listaFechada) - 1; i >= 0; i--){
+		finalPath = InsertNode(finalPath, GetIndex(listaFechada, i));
+	}
+	return finalPath;
+}
+
+Node FindPath(int x1, int y1, int x2, int y2)
+{
+
+	// Only try to find a path if the start and end points are different.
+	if (x1 == x2 && y1 == y2)
+	{
+		return NULL;
+	}
+
+	/////////////////////////////////////////////////////////////////////
+	// Step 1 : Clear the Open and Closed Lists and reset each node’s F 
+	//          and G values in case they are still set from the last 
+	//          time we tried to find a path. 
+	/////////////////////////////////////////////////////////////////////
+	UpdateSearchNodes();
+
+	// Store references to the start and end nodes for convenience.
+	Node startNode = searchNodes[x1][y1];
+	Node endNode = searchNodes[x2][y2];
+
+	/////////////////////////////////////////////////////////////////////
+	// Step 2 : Set the start node’s G value to 0 and its F value to the 
+	//          estimated distance between the start node and goal node 
+	//          (this is where our H function comes in) and add it to the 
+	//          Open List. 
+	/////////////////////////////////////////////////////////////////////
+	startNode->inOpenList = true;
+
+	startNode->distanceToTarget = Heuristic(x1, y1, x2, y2);
+	startNode->distanceTravelled = 0;
+	
+	listaAberta = InsertNode(listaAberta, startNode);
+
+	/////////////////////////////////////////////////////////////////////
+	// Setp 3 : While there are still nodes to look at in the Open list : 
+	/////////////////////////////////////////////////////////////////////
+	while (ListCount(listaAberta) > 0)
+	{
+		/////////////////////////////////////////////////////////////////
+		// a) : Loop through the Open List and find the node that 
+		//      has the smallest F value.
+		/////////////////////////////////////////////////////////////////
+		Node currentNode = FindBestNode();
+
+		/////////////////////////////////////////////////////////////////
+		// b) : If the Open List empty or no node can be found, 
+		//      no path can be found so the algorithm terminates.
+		/////////////////////////////////////////////////////////////////
+		if (currentNode == NULL)
+		{
+			break;
+		}
+
+		/////////////////////////////////////////////////////////////////
+		// c) : If the Active Node is the goal node, we will 
+		//      find and return the final path.
+		/////////////////////////////////////////////////////////////////
+		if (currentNode == endNode)
+		{
+			// Trace our path back to the start.
+			return FindFinalPath(startNode, endNode);
+		}
+
+		/////////////////////////////////////////////////////////////////
+		// d) : Else, for each of the Active Node’s neighbours :
+		/////////////////////////////////////////////////////////////////
+		for (int i = 0; i < currentNode->contadorVizinhos; i++)
+		{
+			Node neighbor = currentNode->vizinhos[i];
+
+			//////////////////////////////////////////////////
+			// i) : Make sure that the neighbouring node can 
+			//      be walked across. 
+			//////////////////////////////////////////////////
+			if (neighbor == NULL || neighbor->caminho == false)
+			{
+				continue;
+			}
+
+			//////////////////////////////////////////////////
+			// ii) Calculate a new G value for the neighbouring node.
+			//////////////////////////////////////////////////
+			float distanceTraveled = currentNode->distanceTravelled + 1;
+
+			// An estimate of the distance from this node to the end node.
+			float heuristic = Heuristic(neighbor->x, neighbor->y, x2, y2);
+
+			//////////////////////////////////////////////////
+			// iii) If the neighbouring node is not in either the Open 
+			//      List or the Closed List : 
+			//////////////////////////////////////////////////
+			if (neighbor->inOpenList == false && neighbor->inClosedList == false)
+			{
+				// (1) Set the neighbouring node’s G value to the G value 
+				//     we just calculated.
+				neighbor->distanceTravelled = distanceTraveled;
+				// (2) Set the neighbouring node’s F value to the new G value + 
+				//     the estimated distance between the neighbouring node and
+				//     goal node.
+				neighbor->distanceToTarget = distanceTraveled + heuristic;
+				// (3) Set the neighbouring node’s Parent property to point at the Active 
+				//     Node.
+				neighbor->parent = currentNode;
+				// (4) Add the neighbouring node to the Open List.
+				neighbor->inOpenList = true;
+				listaAberta = InsertNode(listaAberta, neighbor);
+			}
+			//////////////////////////////////////////////////
+			// iv) Else if the neighbouring node is in either the Open 
+			//     List or the Closed List :
+			//////////////////////////////////////////////////
+			else if (neighbor->inOpenList || neighbor->inClosedList)
+			{
+				// (1) If our new G value is less than the neighbouring 
+				//     node’s G value, we basically do exactly the same 
+				//     steps as if the nodes are not in the Open and 
+				//     Closed Lists except we do not need to add this node 
+				//     the Open List again.
+				if (neighbor->distanceTravelled > distanceTraveled)
+				{
+					neighbor->distanceTravelled = distanceTraveled;
+					neighbor->distanceToTarget = distanceTraveled + heuristic;
+
+					neighbor->parent = currentNode;
+				}
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////
+		// e) Remove the Active Node from the Open List and add it to the 
+		//    Closed List
+		/////////////////////////////////////////////////////////////////
+		listaAberta = RemoveNode(listaAberta, currentNode->x, currentNode->y);
+		currentNode->inClosedList = true;
+	}
+
+	// No path could be found.
+	return NULL;
+}
+
 
 //***********************************************************************************************************//
 
@@ -479,8 +856,8 @@ Building InsertBuilding(Building endereco, int j, int i, int type){
 		break;
 	}
 
-	edificio->i = i;
-	edificio->j = j;
+	edificio->x = i;
+	edificio->y = j;
 	edificio->timer = 0;
 	edificio->type = type;
 	edificio->constructionCounter = 0;
@@ -583,7 +960,7 @@ void UpdateBuildings(Building endereco){
 //Encontrar edificio numa determinada posicao
 Building FindBuilding(Building endereco, int i, int j){
 	while (endereco != NULL){
-		if (endereco->i == i && endereco->j == j){
+		if (endereco->x == i && endereco->y == j){
 			return endereco;
 		}
 		endereco = endereco->next;
@@ -800,6 +1177,16 @@ int main(int argc, char **argv){
 
 	//Load assets
 	LoadAssets();
+
+	//Inicilizar Pathfinding
+	UpdateSearchNodes();
+
+	//DEBUB
+	Node path = FindPath(0, 0, 25, 13);
+	while (path != NULL){
+		printf("%d, %d\n", path->x, path->y);
+		path = path->next;
+	}
 
 	quintas = InsertFarm(quintas, 8, 1, 14);
 	quintas = InsertFarm(quintas, 8, 2, 17);
