@@ -88,7 +88,7 @@ ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN, YELLOW;
 #define DISPLAYHEIGHT 640
 
 //Velocidades
-#define VELOCIDADE_BONECOS 0.07
+#define VELOCIDADE_BONECOS 0.2
 
 //Offset do ecra
 float offsetX = 0;
@@ -123,6 +123,7 @@ typedef struct character
 	int animationFrame;
 	int animationTimer;
 	struct character *next; //Apontador para o elemento seguinte
+	struct node * path;
 }* Character;
 
 //Descreve um edificio
@@ -221,16 +222,16 @@ Node listaFechada = NULL;
 
 //Reinicializa o estado de todos os nodes
 void ResetSearchNodes(){
-	//Eliminar todos os elementos da lista aberta
+	////Eliminar todos os elementos da lista aberta
 	while (listaAberta != NULL){
 		Node aux = listaAberta->next;
-		free(listaAberta);
+		//free(listaAberta);
 		listaAberta = aux;
 	}
 	//Eliminar todos os elementos da lista fechada
 	while (listaFechada != NULL){
 		Node aux = listaFechada->next;
-		free(listaFechada);
+		//free(listaFechada);
 		listaFechada = aux;
 	}
 	//Fazer reset às propriedades dos nodes
@@ -245,6 +246,7 @@ void ResetSearchNodes(){
 			node->distanceTravelled = 0;
 			node->distanceToTarget = 0;
 			node->parent = NULL;
+			node->contadorVizinhos = 0;
 		}
 	}
 }
@@ -1017,43 +1019,133 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->animationFrame = 0;
 	boneco->animationTimer = 0;
 	boneco->next = endereco;
+	boneco->path = NULL;
 	return boneco;
 }
 
+int PixelToWorld(int value, int WidthOrHeight){
+	int res = 0;
+	if (WidthOrHeight == 0){
+		//Largura
+		res = (int)((value / TILEWIDTH));
+	}
+	else{
+		//Altura
+		res = (int)((value / TILEHEIGHT));
+	}
+	return res;
+}
+
+float WorldToPixel(int value, int WidthOrHeight){
+	int res = 0;
+	if (WidthOrHeight == 0){
+		//Largura
+		res = (value * TILEWIDTH);
+	}
+	else{
+		//Altura
+		res = (value * TILEHEIGHT);
+	}
+	return res;
+}
+
+bool AlmostEqualRelative(float A, float B)
+{
+	float maxRelDiff = VELOCIDADE_BONECOS / 100;
+	// Calculate the difference.
+	float diff = fabs(A - B);
+	A = fabs(A);
+	B = fabs(B);
+	// Find the largest
+	float largest = (B > A) ? B : A;
+
+	if (diff < maxRelDiff){
+		return true;
+	}
+
+	if (diff <= largest * maxRelDiff)
+		return true;
+	return false;
+}
+
+
+Node path;
 //Atualizar os bonequinhos
 void UpdateCharacters(Character endereco){
-	if (endereco->movimento){
-		endereco->animationTimer++;
-		if (endereco->animationTimer > 15){
-			if (endereco->animationFrame < 3){
-				endereco->animationFrame++;
+	if (endereco != NULL)
+	{
+		if (endereco->path != NULL){
+			//Esta personagem tem caminho a percorrer
+
+			//Atualizar a animação
+			endereco->animationTimer++;
+			if (endereco->animationTimer > 15){
+				if (endereco->animationFrame < 3){
+					endereco->animationFrame++;
+				}
+				else{
+					endereco->animationFrame = 0;
+				}
+				endereco->animationTimer = 0;
+			}
+
+			//Calcular a direção em que deve andar
+			path = endereco->path;
+			printf("\n%f %f : (%d)%f, (%d)%f", endereco->x, endereco->y, path->x, WorldToPixel(path->x, 0), path->y, WorldToPixel(path->y, 1));
+			if (!AlmostEqualRelative(endereco->x, WorldToPixel(path->x, 0)) ||
+				!AlmostEqualRelative(endereco->y, WorldToPixel(path->y, 1))){
+				if (WorldToPixel(path->y, 1) > endereco->y){
+					//Baixo
+					endereco->direcao = 0;
+				}
+				if (WorldToPixel(path->x, 0) < endereco->x){
+					//Esquerda
+					endereco->direcao = 1;
+				}
+				if (WorldToPixel(path->x, 0) > endereco->x){
+					//Direita
+					endereco->direcao = 2;
+				}
+				if (WorldToPixel(path->y, 1) < endereco->y){
+					//Cima
+					endereco->direcao = 3;
+				}
+
+				switch (endereco->direcao)
+				{
+				case 0:
+					//Baixo
+					endereco->y += VELOCIDADE_BONECOS;
+					break;
+				case 1:
+					//Esquerda
+					endereco->x -= VELOCIDADE_BONECOS;
+					break;
+				case 2:
+					//Direita
+					endereco->x += VELOCIDADE_BONECOS;
+					break;
+				case 3:
+					//Cima
+					endereco->y -= VELOCIDADE_BONECOS;
+					break;
+				default:
+					break;
+				}
+
 			}
 			else{
-				endereco->animationFrame = 0;
+				//Chegámos a este path, eliminá-lo da lista
+				endereco->x = WorldToPixel(path->x, 0);
+				endereco->y = WorldToPixel(path->y, 1);
+				endereco->path = RemoveNode(endereco->path, path->x, path->y);
 			}
-			endereco->animationTimer = 0;
+
+			
 		}
-		switch (endereco->direcao)
-		{
-		case 0: 
-			endereco->y += VELOCIDADE_BONECOS;
-			break;
-		case 1:
-			endereco->x -= VELOCIDADE_BONECOS;
-			break;
-		case 2:
-			endereco->x += VELOCIDADE_BONECOS;
-			break;
-		case 3:
-			endereco->y -= VELOCIDADE_BONECOS;
-			break;
-		default:
-			endereco->y += VELOCIDADE_BONECOS;
-			break;
+		if (endereco->next != NULL){
+			UpdateCharacters(endereco->next);
 		}
-	}
-	if (endereco->next != NULL){
-		UpdateCharacters(endereco->next);
 	}
 }
 
@@ -1107,6 +1199,19 @@ int bounding_box_collision(float b1_x, float b1_y, int b1_w, int b1_h, float b2_
 	return 1;
 }
 
+//Desenha o caminho que uma personagem tem para percorrer
+void DrawCharacterPath(Character boneco){
+	if (boneco != NULL){
+		Node auxPath = boneco->path;
+		while (auxPath != NULL){
+			al_draw_rectangle(auxPath->x * TILEWIDTH + offsetX, auxPath->y * TILEHEIGHT + offsetY,
+				auxPath->x * TILEWIDTH + TILEWIDTH + offsetX, auxPath->y * TILEHEIGHT + TILEHEIGHT + offsetY,
+				GREEN, 2);
+			auxPath = auxPath->next;
+		}
+	}
+}
+
 void DrawCharacterBoundingBox(Character endereco){
 	//Posição do rato
 	x = mouseState.x;
@@ -1121,7 +1226,9 @@ void DrawCharacterBoundingBox(Character endereco){
 		}
 		endereco = endereco->next;
 	}
-
+	
+	//Desenhar o caminho que o boneco está a percorrer, se existir
+	DrawCharacterPath(endereco);
 }
 
 void UpdateInput(){
@@ -1169,6 +1276,7 @@ void UpdateInput(){
 		
 }
 
+Character boneco;
 int main(int argc, char **argv){
 
 	//INICIALIZAÇÃO
@@ -1184,15 +1292,6 @@ int main(int argc, char **argv){
 	quintas = InsertFarm(quintas, 9, 2, 26);
 	quintas = InsertFarm(quintas, 9, 3, 29);
 	quintas = InsertFarm(quintas, 10, 1, 32);
-
-	bonequinhos = InsertCharacter(bonequinhos, men1, 300, 100, 1, 0);
-	bonequinhos = InsertCharacter(bonequinhos, woman1, 1000, 200, 1, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men2, 320, 640, 3, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman2, 10, 300, 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men3, 150, 620, 3, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman3, 200, 330, 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men4, 170, 650, 3, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman4, 190, 310, 2, 1);
 
 	edificios = InsertBuilding(edificios, 15, 5, 35);
 	edificios = InsertBuilding(edificios, 16, 5, 36);
@@ -1216,13 +1315,19 @@ int main(int argc, char **argv){
 	//Inicilizar Pathfinding
 	UpdateSearchNodes();
 
-	//DEBUB
-	Node path = FindPath(3, 0, 3, 15);
-	Node auxPath = path;
-	while (auxPath != NULL){
-		printf("%d, %d\n", auxPath->x, auxPath->y);
-		auxPath = auxPath->next;
-	}
+	/*bonequinhos = InsertCharacter(bonequinhos, men1, 300, 100, 1, 0);
+	bonequinhos = InsertCharacter(bonequinhos, woman1, 1000, 200, 1, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men2, 320, 640, 3, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman2, 10, 300, 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men3, 150, 620, 3, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman3, 200, 330, 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men4, 170, 650, 3, 1);*/
+	boneco = InsertCharacter(bonequinhos, woman4, WorldToPixel(20, 0), WorldToPixel(15, 1), 2, 1);
+	boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), 0, 3);
+	bonequinhos = boneco;
+	boneco = InsertCharacter(bonequinhos, men1, WorldToPixel(0, 0), WorldToPixel(2, 1), 2, 1);
+	boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), 15, 13);
+	bonequinhos = boneco;
 
 	//GAME LOOP
 	while (!exitGame){
@@ -1245,14 +1350,7 @@ int main(int argc, char **argv){
 
 			//DrawNoWalkConstructionTiles();
 
-			//DEBUG
-			auxPath = path;
-			while (auxPath != NULL){
-				al_draw_rectangle(auxPath->x * TILEWIDTH + offsetX, auxPath->y * TILEHEIGHT + offsetY, 
-					auxPath->x * TILEWIDTH + TILEWIDTH + offsetX, auxPath->y * TILEHEIGHT + TILEHEIGHT + offsetY,
-					GREEN, 2);
-				auxPath = auxPath->next;
-			}
+			//DrawHoveredTile();
 
 			DrawCharacters(bonequinhos);
 
