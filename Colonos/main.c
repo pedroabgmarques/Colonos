@@ -18,6 +18,7 @@
 ALLEGRO_FONT *font;
 ALLEGRO_KEYBOARD_STATE state;
 ALLEGRO_MOUSE_STATE mouseState;
+ALLEGRO_MOUSE_STATE mouseStateAnterior;
 int mouseButtons;
 //OUTRAS
 int exitGame = 0;
@@ -215,6 +216,13 @@ Node listaAberta = NULL;
 //Lista fechada de Nodes
 Node listaFechada = NULL;
 
+//Recicladas
+Node path;
+
+//Cenas selecionadas
+Character bonecoSelecionado = NULL;
+bool bonecoHovered = false;
+
 //***********************************************************************************************************//
 
 //***********************************************************************************************************//
@@ -225,19 +233,21 @@ void ResetSearchNodes(){
 	////Eliminar todos os elementos da lista aberta
 	while (listaAberta != NULL){
 		Node aux = listaAberta->next;
-		//free(listaAberta);
+		//free(listaAberta); //MEMORY LEAK!!!
 		listaAberta = aux;
 	}
+	listaAberta = NULL;
 	//Eliminar todos os elementos da lista fechada
 	while (listaFechada != NULL){
 		Node aux = listaFechada->next;
-		//free(listaFechada);
+		//free(listaFechada); //MEMORY LEAK!!!
 		listaFechada = aux;
 	}
+	listaFechada = NULL;
 	//Fazer reset às propriedades dos nodes
 	for (int x = 0; x < MAPWIDTH; x++){
 		for (int y = 0; y < MAPHEIGHT; y++){
-			Node node = searchNodes[x, y];
+			Node node = searchNodes[x][y];
 			if (node == NULL) {
 				continue;
 			}
@@ -284,6 +294,7 @@ void UpdateSearchNodes(){
 	ResetSearchNodes();
 	int x, y;
 	//Criar um node para cada espaço do mapa
+	Node node;
 	for (x = 0; x < MAPWIDTH; x++)
 	{
 		for (y = 0; y < MAPHEIGHT; y++)
@@ -305,10 +316,9 @@ void UpdateSearchNodes(){
 				node->caminho = true;
 				searchNodes[x][y] = node;
 			}
-			
 		}
 	}
-	//Para cada um dos nodes que criámos, vamos ligá-lo aos vizinhos
+	//Para cada um dos nodes, vamos ligá-lo aos vizinhos
 	for (x = 0; x < MAPWIDTH; x++)
 	{
 		for (y = 0; y < MAPHEIGHT; y++)
@@ -442,6 +452,7 @@ Node FindPath(int x1, int y1, int x2, int y2)
 	//          and G values in case they are still set from the last 
 	//          time we tried to find a path. 
 	/////////////////////////////////////////////////////////////////////
+	//UpdateSearchNodes();
 	UpdateSearchNodes();
 
 	// Store references to the start and end nodes for convenience.
@@ -1003,7 +1014,7 @@ void DrawNoWalkConstructionTiles(){
 			if (mapDef[j][i][1] == 0){
 				//Can't walk on these tiles
 				al_draw_rectangle(i * TILEWIDTH + offsetX, j * TILEHEIGHT + offsetY, i * TILEWIDTH + TILEWIDTH + offsetX, j * TILEHEIGHT + TILEHEIGHT + offsetY,
-					YELLOW, 1);
+					RED, 1);
 			}	
 		}
 	}
@@ -1023,7 +1034,7 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	return boneco;
 }
 
-int PixelToWorld(int value, int WidthOrHeight){
+int PixelToWorld(float value, int WidthOrHeight){
 	int res = 0;
 	if (WidthOrHeight == 0){
 		//Largura
@@ -1068,10 +1079,11 @@ bool AlmostEqualRelative(float A, float B)
 	return false;
 }
 
-
-Node path;
 //Atualizar os bonequinhos
 void UpdateCharacters(Character endereco){
+
+	bonecoHovered = false;
+
 	if (endereco != NULL)
 	{
 		if (endereco->path != NULL){
@@ -1091,7 +1103,7 @@ void UpdateCharacters(Character endereco){
 
 			//Calcular a direção em que deve andar
 			path = endereco->path;
-			printf("\n%f %f : (%d)%f, (%d)%f", endereco->x, endereco->y, path->x, WorldToPixel(path->x, 0), path->y, WorldToPixel(path->y, 1));
+			//printf("\n%f %f : (%d)%f, (%d)%f", endereco->x, endereco->y, path->x, WorldToPixel(path->x, 0), path->y, WorldToPixel(path->y, 1));
 			if (!AlmostEqualRelative(endereco->x, WorldToPixel(path->x, 0)) ||
 				!AlmostEqualRelative(endereco->y, WorldToPixel(path->y, 1))){
 				if (WorldToPixel(path->y, 1) > endereco->y){
@@ -1161,6 +1173,8 @@ void DrawCharacters(Character endereco){
 //Destroi os objetos criados
 void ShutDown(){
 
+	bonecoSelecionado = false;
+
 	if (display){
 		al_destroy_display(display);
 	}
@@ -1220,6 +1234,7 @@ void DrawCharacterBoundingBox(Character endereco){
 	while (endereco != NULL){
 		if (bounding_box_collision(x, y, 10, 20, endereco->x + offsetX, endereco->y + offsetY, 16, 24)){
 			//O rato está por cima de um bonequinho!
+			bonecoHovered = true;
 			al_draw_rectangle(endereco->x + offsetX, endereco->y + offsetY, endereco->x + 16 + offsetX, endereco->y + 24 + offsetY,
 				GREEN, 2);
 			break;
@@ -1229,6 +1244,29 @@ void DrawCharacterBoundingBox(Character endereco){
 	
 	//Desenhar o caminho que o boneco está a percorrer, se existir
 	DrawCharacterPath(endereco);
+}
+
+void ProcessMouseClicks(Character bonequinhos){
+	x = mouseState.x;
+	y = mouseState.y;
+
+	//Verificar cliques para selecionar bonecos
+	while (bonequinhos != NULL){
+		if (bounding_box_collision(x, y, 10, 20, bonequinhos->x + offsetX, bonequinhos->y + offsetY, 16, 24)){
+			//O rato está por cima de um bonequinho!
+			bonecoSelecionado = bonequinhos;
+			break;
+		}
+		bonequinhos = bonequinhos->next;
+	}
+
+	//Verificar cliques para mandar bonecos andar
+	if (bonecoSelecionado != NULL && !bounding_box_collision(x, y, 10, 20, bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, 16, 24)){
+		//Mandar este boneco andar para o destino clicado
+		printf("\n%d; %d; : %d; %d\n", PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x, 0), PixelToWorld(y, 1));
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x, 0), PixelToWorld(y, 1));
+		bonecoSelecionado = NULL;
+	}
 }
 
 void UpdateInput(){
@@ -1273,10 +1311,18 @@ void UpdateInput(){
 		//DrawHoveredTile();
 		DrawCharacterBoundingBox(bonequinhos);
 	}
+
+	//Detetar cliques
+	if (mouseState.buttons & 1 && (!mouseStateAnterior.buttons & 1)) {
+		/* Primary (e.g. left) mouse button is held. */
+		printf("Mouse position: (%d, %d)\n", mouseState.x, mouseState.y);
+		ProcessMouseClicks(bonequinhos);
+	}
+
+	mouseStateAnterior = mouseState;
 		
 }
 
-Character boneco;
 int main(int argc, char **argv){
 
 	//INICIALIZAÇÃO
@@ -1322,12 +1368,17 @@ int main(int argc, char **argv){
 	bonequinhos = InsertCharacter(bonequinhos, men3, 150, 620, 3, 1);
 	bonequinhos = InsertCharacter(bonequinhos, woman3, 200, 330, 2, 1);
 	bonequinhos = InsertCharacter(bonequinhos, men4, 170, 650, 3, 1);*/
-	boneco = InsertCharacter(bonequinhos, woman4, WorldToPixel(20, 0), WorldToPixel(15, 1), 2, 1);
-	boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), 0, 3);
-	bonequinhos = boneco;
-	boneco = InsertCharacter(bonequinhos, men1, WorldToPixel(0, 0), WorldToPixel(2, 1), 2, 1);
-	boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), 15, 13);
-	bonequinhos = boneco;
+	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(20, 0), WorldToPixel(16, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(0, 0), WorldToPixel(2, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men3, WorldToPixel(10, 0), WorldToPixel(7, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men4, WorldToPixel(8, 0), WorldToPixel(2, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(20, 0), WorldToPixel(18, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman3, WorldToPixel(2, 0), WorldToPixel(13, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman4, WorldToPixel(18, 0), WorldToPixel(14, 1), 2, 1);
+	
+	//boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), 0, 3);
+
 
 	//GAME LOOP
 	while (!exitGame){
@@ -1348,13 +1399,22 @@ int main(int argc, char **argv){
 
 			DrawMap();
 
-			//DrawNoWalkConstructionTiles();
-
-			//DrawHoveredTile();
-
 			DrawCharacters(bonequinhos);
 
 			UpdateInput(); //Desenha também a grid do rato
+
+			if (bonecoSelecionado != NULL){
+				al_draw_rectangle(bonecoSelecionado->x + offsetX,bonecoSelecionado->y + offsetY,bonecoSelecionado->x + 16 + offsetX,bonecoSelecionado->y + 24 + offsetY,
+					RED, 2);
+
+				if (!bonecoHovered){
+					DrawHoveredTile();
+				}
+			}
+
+			if (bonecoSelecionado){
+				DrawNoWalkConstructionTiles();
+			}
 
 			al_flip_display();
 		}
