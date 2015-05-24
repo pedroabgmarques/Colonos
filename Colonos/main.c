@@ -1263,8 +1263,8 @@ void ProcessMouseClicks(Character bonequinhos){
 	//Verificar cliques para mandar bonecos andar
 	if (bonecoSelecionado != NULL && !bounding_box_collision(x, y, 10, 20, bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, 16, 24)){
 		//Mandar este boneco andar para o destino clicado
-		printf("\n%d; %d; : %d; %d\n", PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x, 0), PixelToWorld(y, 1));
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x, 0), PixelToWorld(y, 1));
+		printf("\n%d; %d; : %d; %d\n", PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
 		bonecoSelecionado = NULL;
 	}
 }
