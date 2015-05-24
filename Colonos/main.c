@@ -1260,10 +1260,56 @@ void DrawBuildingBoudingBox(Building edificios){
 		edificioY = (round(WorldToPixel(edificios->x, 0) / TILEHEIGHT)  * TILEHEIGHT);
 
 		if (bounding_box_collision(x, y, 10, 20, edificioX, edificioY, TILEWIDTH, TILEHEIGHT)){
+
 			//O rato está por cima de um edificio!
-			al_draw_rectangle(edificioX, edificioY, edificioX + TILEWIDTH, edificioY + TILEHEIGHT,
-				GREEN, 2);
-			break;
+
+			//Casas duplas
+			if (edificios->type == 35 || edificios->type == 37){
+				//Hedquarters e Farmhouse, esquerdo
+				al_draw_rectangle(edificioX, edificioY, edificioX + TILEWIDTH * 2, edificioY + TILEHEIGHT,
+					GREEN, 2);
+			}
+			else if (edificios->type == 36 || edificios->type == 38){
+				//Headquartes e Farmhouse, direito
+				al_draw_rectangle(edificioX - TILEWIDTH, edificioY, edificioX + TILEWIDTH, edificioY + TILEHEIGHT,
+					GREEN, 2);
+			}
+
+
+			//Casas quadruplas
+			else if (edificios->type == 41){
+				//Warehouse, esquerdo cima
+				al_draw_rectangle(edificioX, edificioY, edificioX + TILEWIDTH * 2, edificioY + TILEHEIGHT * 2,
+					GREEN, 2);
+			}
+			else if (edificios->type == 42){
+				//Warehouse, direito cima
+				al_draw_rectangle(edificioX - TILEWIDTH, edificioY, edificioX + TILEWIDTH, edificioY + TILEHEIGHT * 2,
+					GREEN, 2);
+			}
+			else if (edificios->type == 43){
+				//Warehouse, esquerdo baixo
+				al_draw_rectangle(edificioX, edificioY - TILEHEIGHT, edificioX + TILEWIDTH * 2, edificioY + TILEHEIGHT,
+					GREEN, 2);
+			}
+			else if (edificios->type == 44){
+				//Warehouse, direito baixo
+				al_draw_rectangle(edificioX - TILEWIDTH, edificioY - TILEHEIGHT, edificioX + TILEWIDTH, edificioY + TILEHEIGHT,
+					GREEN, 2);
+			}
+
+			else{
+				//Casas simples
+				al_draw_rectangle(edificioX, edificioY, edificioX + TILEWIDTH, edificioY + TILEHEIGHT,
+					GREEN, 2);
+				break;
+			}
+
+			
+
+			
+			
+
 		}
 		edificios = edificios->next;
 	}
