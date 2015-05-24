@@ -1230,7 +1230,7 @@ void DrawCharacterBoundingBox(Character endereco){
 	//Posição do rato
 	x = mouseState.x;
 	y = mouseState.y;
-	
+
 	while (endereco != NULL){
 		if (bounding_box_collision(x, y, 10, 20, endereco->x + offsetX, endereco->y + offsetY, 16, 24)){
 			//O rato está por cima de um bonequinho!
@@ -1244,6 +1244,29 @@ void DrawCharacterBoundingBox(Character endereco){
 	
 	//Desenhar o caminho que o boneco está a percorrer, se existir
 	DrawCharacterPath(endereco);
+}
+
+void DrawBuildingBoudingBox(Building edificios){
+	//Posição do rato
+	x = mouseState.x;
+	y = mouseState.y;
+
+	float edificioX, edificioY;
+	
+	while (edificios != NULL){
+
+		//Atenção que parece estar ao contrário mas tem que ser assim, por causa da rotação do mapa
+		edificioX = (round(WorldToPixel(edificios->y, 1) / TILEWIDTH)  * TILEWIDTH);
+		edificioY = (round(WorldToPixel(edificios->x, 0) / TILEHEIGHT)  * TILEHEIGHT);
+
+		if (bounding_box_collision(x, y, 10, 20, edificioX, edificioY, TILEWIDTH, TILEHEIGHT)){
+			//O rato está por cima de um edificio!
+			al_draw_rectangle(edificioX, edificioY, edificioX + TILEWIDTH, edificioY + TILEHEIGHT,
+				GREEN, 2);
+			break;
+		}
+		edificios = edificios->next;
+	}
 }
 
 void ProcessMouseClicks(Character bonequinhos){
@@ -1310,6 +1333,7 @@ void UpdateInput(){
 	if (!exitGame) {
 		//DrawHoveredTile();
 		DrawCharacterBoundingBox(bonequinhos);
+		DrawBuildingBoudingBox(edificios);
 	}
 
 	//Detetar cliques
@@ -1401,7 +1425,7 @@ int main(int argc, char **argv){
 
 			DrawCharacters(bonequinhos);
 
-			UpdateInput(); //Desenha também a grid do rato
+			UpdateInput(); //Desenha também hovers do rato
 
 			if (bonecoSelecionado != NULL){
 				al_draw_rectangle(bonecoSelecionado->x + offsetX,bonecoSelecionado->y + offsetY,bonecoSelecionado->x + 16 + offsetX,bonecoSelecionado->y + 24 + offsetY,
