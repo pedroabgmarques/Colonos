@@ -338,7 +338,6 @@ void UpdateSearchNodes(){
 	ResetSearchNodes();
 	int x, y;
 	//Criar um node para cada espaço do mapa
-	Node node;
 	for (x = 0; x < MAPWIDTH; x++)
 	{
 		for (y = 0; y < MAPHEIGHT; y++)
@@ -692,14 +691,14 @@ int InitializeAllegro(){
 	//initialize the ttf (True Type Font) addon
 	al_init_ttf_addon();
 	//Inicializar uma fonte
-	titulos = al_load_ttf_font("Aller_Rg.ttf", 28, 0);
+	titulos = al_load_ttf_font("aller.ttf", 28, 0);
 	if (!titulos){
-		fprintf(stderr, "Could not load 'Aller_Rg.ttf'.\n");
+		fprintf(stderr, "Could not load 'pirulen.ttf'.\n");
 		return -1;
 	}
-	textos = al_load_ttf_font("Aller_Rg.ttf", 14, 0);
+	textos = al_load_ttf_font("aller.ttf", 14, 0);
 	if (!textos){
-		fprintf(stderr, "Could not load 'Aller_Rg.ttf'.\n");
+		printf("Could not load 'aller.ttf'.\n");
 		return -1;
 	}
 
