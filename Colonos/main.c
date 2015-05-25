@@ -15,7 +15,8 @@
 
 //Variáveis Globais
 //ALLEGRO
-ALLEGRO_FONT *font;
+ALLEGRO_FONT *titulos;
+ALLEGRO_FONT *textos;
 ALLEGRO_KEYBOARD_STATE state;
 ALLEGRO_MOUSE_STATE mouseState;
 ALLEGRO_MOUSE_STATE mouseStateAnterior;
@@ -78,7 +79,7 @@ ALLEGRO_BITMAP *city_hall1, *city_hall2, *farm1, *farm2, *house1,
 ALLEGRO_BITMAP *men1, *men2, *men3, *men4, *woman1, *woman2, *woman3, *woman4 = NULL;
 
 //Cores
-ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN, YELLOW;
+ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN, YELLOW, GREY, WHITE;
 
 //Tamanho do mapa
 #define MAPWIDTH 35
@@ -114,6 +115,24 @@ typedef struct farm
 	struct farm *next; //Apontador para o elemento seguinte
 }* Farm;
 
+typedef struct tarefa
+{
+	//0 - Ir para casa;
+	//1 - Apanhar Madeira
+	//2 - Descarregar Madeira
+	//3 - Apanhar Pedra
+	//4 - Descarregar Pedra
+	//5 - Apanhar Peixe
+	//6 - Descarregar Peixe
+	//7 - Apanhar Vegetais
+	//8 - Descarregar Vegetais
+	//9 - Descansar
+	int type; 
+	int x, y; //Coordenadas da tarefa a executar
+	struct building *building; //Apontador para o edificio da tarefa
+	struct tarefa *next; //Proxima tafera a executar
+}* Tarefa;
+
 //Descreve um bonequinho
 typedef struct character
 {
@@ -124,7 +143,8 @@ typedef struct character
 	int animationFrame;
 	int animationTimer;
 	struct character *next; //Apontador para o elemento seguinte
-	struct node * path;
+	struct node * path; //Caminho que o boneco tem a percorrer
+	struct tarefa *tarefa; //Lista de tarefas a executar
 }* Character;
 
 //Descreve um edificio
@@ -136,6 +156,8 @@ typedef struct building
 	int minTimer; //Tempo que o edifício demora a ser construído
 	int constructionCounter; //Vai aumentando cada vez que minTimer = timer, até ao máximo de 32 (altura da sprite)
 	struct building *next; //Apontador para o elemento seguinte
+	struct character *colonists;
+	char name[];
 }* Building;
 
 
@@ -222,6 +244,7 @@ Node path;
 //Cenas selecionadas
 Character bonecoSelecionado = NULL;
 bool bonecoHovered = false;
+Building edificioSelecionado = NULL;
 
 //***********************************************************************************************************//
 
@@ -280,6 +303,27 @@ Node RemoveNode(Node enderecoInicioLista, int x, int y){
 		else{
 			//não é este o elemento e eliminar, continuar a recursão
 			enderecoInicioLista->next = RemoveNode(enderecoInicioLista->next, x, y);
+			return enderecoInicioLista;
+		}
+	}
+	else{
+		//Lista vazia
+		return enderecoInicioLista;
+	}
+}
+
+Character RemoveCharacter(Character enderecoInicioLista, int x, int y){
+	Character aux;
+	if (enderecoInicioLista != NULL){
+		//Lista não está vazia
+		if (enderecoInicioLista->x == x && enderecoInicioLista->y == y){
+			//encontramos o elemento a eliminar
+			aux = enderecoInicioLista->next;
+			return aux;
+		}
+		else{
+			//não é este o elemento e eliminar, continuar a recursão
+			enderecoInicioLista->next = RemoveCharacter(enderecoInicioLista->next, x, y);
 			return enderecoInicioLista;
 		}
 	}
@@ -394,14 +438,25 @@ Node GetIndex(Node lista, int index){
 	return lista;
 }
 
-//Devolve o número de elementos numa lista
-int ListCount(Node endereco){
+//Devolve o número de elementos numa lista de nodes
+int ListCountNodes(Node endereco){
 	if (endereco == NULL){
 		return 0;
 	}
 	else{
 		//A função invoca-se a ela própria
-		return (1 + ListCount(endereco->next));
+		return (1 + ListCountNodes(endereco->next));
+	}
+}
+
+//Devolve o número de elementos numa lista de characters
+int ListCountCharacters(Character endereco){
+	if (endereco == NULL){
+		return 0;
+	}
+	else{
+		//A função invoca-se a ela própria
+		return (1 + ListCountCharacters(endereco->next));
 	}
 }
 
@@ -410,7 +465,7 @@ Node FindBestNode(){
 	Node currentTile;
 	currentTile = GetIndex(listaAberta, 0);
 	float smallestDistanceToTarget = 999999;
-	for (int i = 0; i < ListCount(listaAberta); i++){
+	for (int i = 0; i < ListCountNodes(listaAberta); i++){
 		Node aux = GetIndex(listaAberta, i);
 		if (aux->distanceToTarget < smallestDistanceToTarget){
 			currentTile = GetIndex(listaAberta, i);
@@ -432,7 +487,7 @@ Node FindFinalPath(Node startNode, Node endNode){
 	}
 	Node finalPath = NULL;
 	//Reverter o caminho para ir do inicial ao final
-	for (int i = ListCount(listaFechada) - 1; i >= 0; i--){
+	for (int i = ListCountNodes(listaFechada) - 1; i >= 0; i--){
 		finalPath = InsertNode(finalPath, GetIndex(listaFechada, i));
 	}
 	return finalPath;
@@ -475,7 +530,7 @@ Node FindPath(int x1, int y1, int x2, int y2)
 	/////////////////////////////////////////////////////////////////////
 	// Setp 3 : While there are still nodes to look at in the Open list : 
 	/////////////////////////////////////////////////////////////////////
-	while (ListCount(listaAberta) > 0)
+	while (ListCountNodes(listaAberta) > 0)
 	{
 		/////////////////////////////////////////////////////////////////
 		// a) : Loop through the Open List and find the node that 
@@ -637,9 +692,14 @@ int InitializeAllegro(){
 	//initialize the ttf (True Type Font) addon
 	al_init_ttf_addon();
 	//Inicializar uma fonte
-	font = al_load_ttf_font("pirulen.ttf", 28, 0);
-	if (!font){
-		fprintf(stderr, "Could not load 'pirulen.ttf'.\n");
+	titulos = al_load_ttf_font("Aller_Rg.ttf", 28, 0);
+	if (!titulos){
+		fprintf(stderr, "Could not load 'Aller_Rg.ttf'.\n");
+		return -1;
+	}
+	textos = al_load_ttf_font("Aller_Rg.ttf", 14, 0);
+	if (!textos){
+		fprintf(stderr, "Could not load 'Aller_Rg.ttf'.\n");
 		return -1;
 	}
 
@@ -649,6 +709,8 @@ int InitializeAllegro(){
 	ORANGE = al_map_rgb(255, 255, 0);
 	GREEN = al_map_rgb(0, 128, 0);
 	YELLOW = al_map_rgb(255, 255, 0);
+	GREY = al_map_rgba(0, 0, 0, 128);
+	WHITE = al_map_rgb(255, 255, 255);
 	
 	al_start_timer(timer);
 
@@ -829,42 +891,55 @@ Building InsertBuilding(Building endereco, int j, int i, int type){
 	{
 	case 35: //City hall1
 		edificio->minTimer = 0; //Já aparece constuído
+		strcpy(edificio->name, "Headquarters");
 		break;
 	case 36: //City hall2
 		edificio->minTimer = 0; //Já aparece constuído
+		strcpy(edificio->name, "Headquarters");
 		break;
 	case 37: //Farm1
 		edificio->minTimer = 100;
+		strcpy(edificio->name, "Farmhouse");
 		break;
 	case 38: //Farm2
 		edificio->minTimer = 100;
+		strcpy(edificio->name, "Farmhouse");
 		break;
 	case 39: //house 1
 		edificio->minTimer = 200;
+		strcpy(edificio->name, "House");
 		break;
 	case 40: //house2
 		edificio->minTimer = 200;
+		strcpy(edificio->name, "House");
 		break;
 	case 41: //warehouse1
 		edificio->minTimer = 400;
+		strcpy(edificio->name, "Warehouse");
 		break;
 	case 42: //warehouse2
 		edificio->minTimer = 400;
+		strcpy(edificio->name, "Warehouse");
 		break;
 	case 43: //warehouse3
 		edificio->minTimer = 400;
+		strcpy(edificio->name, "Warehouse");
 		break;
 	case 44: //warehouse4
 		edificio->minTimer = 400;
+		strcpy(edificio->name, "Warehouse");
 		break;
 	case 45: //house 3
 		edificio->minTimer = 200;
+		strcpy(edificio->name, "House");
 		break;
 	case 46: //house 4
 		edificio->minTimer = 200;
+		strcpy(edificio->name, "House");
 		break;
 	default:
 		edificio->minTimer = 200;
+		strcpy(edificio->name, "House");
 		break;
 	}
 
@@ -874,6 +949,7 @@ Building InsertBuilding(Building endereco, int j, int i, int type){
 	edificio->type = type;
 	edificio->constructionCounter = 0;
 	edificio->next = endereco;
+	edificio->colonists = NULL;
 	mapDef[i][j][0] = type;
 	mapDef[i][j][1] = 0; // Characters can't walk over buildings 
 	mapDef[i][j][2] = 0; // Can't build over farms
@@ -1031,6 +1107,7 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->animationTimer = 0;
 	boneco->next = endereco;
 	boneco->path = NULL;
+	boneco->tarefa = NULL;
 	return boneco;
 }
 
@@ -1155,31 +1232,62 @@ void UpdateCharacters(Character endereco){
 
 			
 		}
+		else{
+			//Chegámos ao destino, atualizar tarefas
+			if (endereco->tarefa != NULL){
+				switch (endereco->tarefa->type)
+				{
+				case 0:
+					//IR PARA CASA
+					//Remover este boneco da lista de bonecos
+					//Remover da lista de bonecos
+					bonequinhos = RemoveCharacter(bonequinhos, endereco->x, endereco->y);
+					//Adicionar este boneco à lista da casa
+					Building edificio = endereco->tarefa->building;
+					Character colono = edificio->colonists;
+					endereco->next = colono;
+					edificio->colonists = endereco;
+					//Remover a tarefa
+					endereco->tarefa = NULL;
+					break;
+				default:
+					break;
+				}
+			}
+		}
+
 		if (endereco->next != NULL){
 			UpdateCharacters(endereco->next);
 		}
+	
 	}
 }
 
 //Desenhar os bonequinhos
 void DrawCharacters(Character endereco){
-	al_draw_bitmap_region(endereco->spriteSheet,
-		endereco->animationFrame * 16, endereco->direcao * 24, 16, 24, endereco->x + offsetX, endereco->y + offsetY, 0);
-	if (endereco->next != NULL){
-		DrawCharacters(endereco->next);
+	if (endereco != NULL){
+		al_draw_bitmap_region(endereco->spriteSheet,
+			endereco->animationFrame * 16, endereco->direcao * 24, 16, 24, endereco->x + offsetX, endereco->y + offsetY, 0);
+		if (endereco->next != NULL){
+			DrawCharacters(endereco->next);
+		}
 	}
 }
 
 //Destroi os objetos criados
 void ShutDown(){
 
-	bonecoSelecionado = false;
+	bonecoSelecionado = NULL;
+	edificioSelecionado = NULL;
 
 	if (display){
 		al_destroy_display(display);
 	}
-	if (font){
-		al_destroy_font(font);
+	if (titulos){
+		al_destroy_font(titulos);
+	}
+	if (textos){
+		al_destroy_font(textos);
 	}
 	if (timer){
 		al_destroy_timer(timer);
@@ -1246,7 +1354,57 @@ void DrawCharacterBoundingBox(Character endereco){
 	DrawCharacterPath(endereco);
 }
 
-void DrawBuildingBoudingBox(Building edificios){
+void DrawBoundingBoxBuilding(Building edificios){
+
+	float edificioX, edificioY;
+
+	//Atenção que parece estar ao contrário mas tem que ser assim, por causa da rotação do mapa
+	edificioX = (round(WorldToPixel(edificios->y, 1) / TILEWIDTH)  * TILEWIDTH);
+	edificioY = (round(WorldToPixel(edificios->x, 0) / TILEHEIGHT)  * TILEHEIGHT);
+
+	//Casas duplas
+	if (edificios->type == 35 || edificios->type == 37){
+		//Hedquarters e Farmhouse, esquerdo
+		al_draw_rectangle(edificioX + offsetX, edificioY + offsetY, edificioX + offsetX + TILEWIDTH * 2, edificioY + offsetY + TILEHEIGHT,
+			GREEN, 2);
+	}
+	else if (edificios->type == 36 || edificios->type == 38){
+		//Headquartes e Farmhouse, direito
+		al_draw_rectangle(edificioX + offsetX - TILEWIDTH, edificioY + offsetY, edificioX + offsetX + TILEWIDTH, edificioY + offsetY + TILEHEIGHT,
+			GREEN, 2);
+	}
+
+
+	//Casas quadruplas
+	else if (edificios->type == 41){
+		//Warehouse, esquerdo cima
+		al_draw_rectangle(edificioX + offsetX, edificioY + offsetY, edificioX + offsetX + TILEWIDTH * 2, edificioY + offsetY + TILEHEIGHT * 2,
+			GREEN, 2);
+	}
+	else if (edificios->type == 42){
+		//Warehouse, direito cima
+		al_draw_rectangle(edificioX + offsetX - TILEWIDTH, edificioY + offsetY, edificioX + offsetX + TILEWIDTH, edificioY + offsetY + TILEHEIGHT * 2,
+			GREEN, 2);
+	}
+	else if (edificios->type == 43){
+		//Warehouse, esquerdo baixo
+		al_draw_rectangle(edificioX + offsetX, edificioY + offsetY - TILEHEIGHT, edificioX + offsetX + TILEWIDTH * 2, edificioY + offsetY + TILEHEIGHT,
+			GREEN, 2);
+	}
+	else if (edificios->type == 44){
+		//Warehouse, direito baixo
+		al_draw_rectangle(edificioX + offsetX - TILEWIDTH, edificioY + offsetY - TILEHEIGHT, edificioX + offsetX + TILEWIDTH, edificioY + offsetY + TILEHEIGHT,
+			GREEN, 2);
+	}
+
+	else{
+		//Casas simples
+		al_draw_rectangle(edificioX + offsetX, edificioY + offsetY, edificioX + offsetX + TILEWIDTH, edificioY + offsetY + TILEHEIGHT,
+			GREEN, 2);
+	}
+}
+
+void DrawBuildingHover(Building edificios){
 	//Posição do rato
 	x = mouseState.x;
 	y = mouseState.y;
@@ -1262,53 +1420,7 @@ void DrawBuildingBoudingBox(Building edificios){
 		if (bounding_box_collision(x, y, 10, 20, edificioX + offsetX, edificioY + offsetY, TILEWIDTH, TILEHEIGHT)){
 
 			//O rato está por cima de um edificio!
-
-			//Casas duplas
-			if (edificios->type == 35 || edificios->type == 37){
-				//Hedquarters e Farmhouse, esquerdo
-				al_draw_rectangle(edificioX + offsetX, edificioY + offsetY, edificioX + offsetX + TILEWIDTH * 2, edificioY + offsetY + TILEHEIGHT,
-					GREEN, 2);
-			}
-			else if (edificios->type == 36 || edificios->type == 38){
-				//Headquartes e Farmhouse, direito
-				al_draw_rectangle(edificioX + offsetX - TILEWIDTH, edificioY + offsetY, edificioX + offsetX + TILEWIDTH, edificioY + offsetY + TILEHEIGHT,
-					GREEN, 2);
-			}
-
-
-			//Casas quadruplas
-			else if (edificios->type == 41){
-				//Warehouse, esquerdo cima
-				al_draw_rectangle(edificioX + offsetX, edificioY + offsetY, edificioX + offsetX + TILEWIDTH * 2, edificioY + offsetY + TILEHEIGHT * 2,
-					GREEN, 2);
-			}
-			else if (edificios->type == 42){
-				//Warehouse, direito cima
-				al_draw_rectangle(edificioX + offsetX - TILEWIDTH, edificioY + offsetY, edificioX + offsetX + TILEWIDTH, edificioY + offsetY + TILEHEIGHT * 2,
-					GREEN, 2);
-			}
-			else if (edificios->type == 43){
-				//Warehouse, esquerdo baixo
-				al_draw_rectangle(edificioX + offsetX, edificioY + offsetY - TILEHEIGHT, edificioX + offsetX + TILEWIDTH * 2, edificioY + offsetY + TILEHEIGHT,
-					GREEN, 2);
-			}
-			else if (edificios->type == 44){
-				//Warehouse, direito baixo
-				al_draw_rectangle(edificioX + offsetX - TILEWIDTH, edificioY + offsetY - TILEHEIGHT, edificioX + offsetX + TILEWIDTH, edificioY + offsetY + TILEHEIGHT,
-					GREEN, 2);
-			}
-
-			else{
-				//Casas simples
-				al_draw_rectangle(edificioX + offsetX, edificioY + offsetY, edificioX + offsetX + TILEWIDTH, edificioY + offsetY + TILEHEIGHT,
-					GREEN, 2);
-				break;
-			}
-
-			
-
-			
-			
+			DrawBoundingBoxBuilding(edificios);
 
 		}
 		edificios = edificios->next;
@@ -1318,23 +1430,96 @@ void DrawBuildingBoudingBox(Building edificios){
 void ProcessMouseClicks(Character bonequinhos){
 	x = mouseState.x;
 	y = mouseState.y;
+	float edificioX, edificioY;
+	Building aux = edificios;
+	bool continuar = true;
 
 	//Verificar cliques para selecionar bonecos
 	while (bonequinhos != NULL){
 		if (bounding_box_collision(x, y, 10, 20, bonequinhos->x + offsetX, bonequinhos->y + offsetY, 16, 24)){
 			//O rato está por cima de um bonequinho!
 			bonecoSelecionado = bonequinhos;
+			edificioSelecionado = NULL;
+			continuar = false;
 			break;
 		}
 		bonequinhos = bonequinhos->next;
 	}
 
 	//Verificar cliques para mandar bonecos andar
-	if (bonecoSelecionado != NULL && !bounding_box_collision(x, y, 10, 20, bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, 16, 24)){
-		//Mandar este boneco andar para o destino clicado
-		printf("\n%d; %d; : %d; %d\n", PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
-		bonecoSelecionado = NULL;
+	if (continuar && bonecoSelecionado != NULL && !bounding_box_collision(x, y, 10, 20, bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, 16, 24)){
+		
+		//Verificar se está a ser mandado para casa
+		while (aux != NULL){
+			//Atenção que parece estar ao contrário mas tem que ser assim, por causa da rotação do mapa
+			edificioX = (round(WorldToPixel(aux->y, 1) / TILEWIDTH)  * TILEWIDTH);
+			edificioY = (round(WorldToPixel(aux->x, 0) / TILEHEIGHT)  * TILEHEIGHT);
+
+			if (bounding_box_collision(x, y, 10, 20, edificioX + offsetX, edificioY + offsetY, TILEWIDTH, TILEHEIGHT)){
+				//Clique em cima de um edifício
+				if (strcmp(aux->name, "House") == 0){
+					//Clique em cima de uma casa, mandar boneco para casa
+					bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1) + 1);
+					
+					//Tarefa - Ir até casa
+					Tarefa tarefa = (Tarefa)malloc(sizeof(struct tarefa));
+					tarefa->type = 0;
+					tarefa->x = PixelToWorld(x - offsetX, 0);
+					tarefa->y = PixelToWorld(y - offsetY, 1) + 1;
+					tarefa->building = aux;
+					bonecoSelecionado->tarefa = tarefa;
+					continuar = false;
+					bonecoSelecionado = NULL;
+
+					break;
+				}
+			}
+
+			aux = aux->next;
+		}
+	
+
+		if (continuar){
+			//Andar para uma localização no mapa
+			bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
+			bonecoSelecionado = NULL;
+		}
+		
+	}
+
+
+
+	//Verificar clique em cima de edificio
+	while (continuar && aux != NULL){
+		//Atenção que parece estar ao contrário mas tem que ser assim, por causa da rotação do mapa
+		edificioX = (round(WorldToPixel(aux->y, 1) / TILEWIDTH)  * TILEWIDTH);
+		edificioY = (round(WorldToPixel(aux->x, 0) / TILEHEIGHT)  * TILEHEIGHT);
+
+		if (bounding_box_collision(x, y, 10, 20, edificioX + offsetX, edificioY + offsetY, TILEWIDTH, TILEHEIGHT)){
+			//Clique em cima de um edifício!
+			edificioSelecionado = aux;
+			continuar = false;
+			break;
+		}
+		else{
+			edificioSelecionado = NULL;
+		}
+
+		aux = aux->next;
+	}
+}
+
+//Desenha o boneco selecionado e a tile que está hovered
+void DrawBonecoSelecionado(){
+	if (bonecoSelecionado != NULL){
+		al_draw_rectangle(bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, bonecoSelecionado->x + 16 + offsetX, bonecoSelecionado->y + 24 + offsetY,
+			RED, 2);
+
+		if (!bonecoHovered){
+			DrawHoveredTile();
+		}
+
+		DrawNoWalkConstructionTiles();
 	}
 }
 
@@ -1379,18 +1564,47 @@ void UpdateInput(){
 	if (!exitGame) {
 		//DrawHoveredTile();
 		DrawCharacterBoundingBox(bonequinhos);
-		DrawBuildingBoudingBox(edificios);
+		DrawBuildingHover(edificios);
 	}
 
 	//Detetar cliques
 	if (mouseState.buttons & 1 && (!mouseStateAnterior.buttons & 1)) {
 		/* Primary (e.g. left) mouse button is held. */
-		printf("Mouse position: (%d, %d)\n", mouseState.x, mouseState.y);
 		ProcessMouseClicks(bonequinhos);
 	}
 
 	mouseStateAnterior = mouseState;
 		
+}
+
+//Desenha a UI de edificio selecionado
+void DrawEdificioSelecionado(){
+	if (edificioSelecionado != NULL){
+
+		int fundoX, fundoY;
+		fundoX = 20;
+		fundoY = DISPLAYHEIGHT - 100;
+
+		//Fundo
+		al_draw_filled_rounded_rectangle(fundoX, fundoY, DISPLAYWIDTH - 20, DISPLAYHEIGHT - 20,
+			10, 10, GREY);
+
+		//Nome do edifício
+		al_draw_text(titulos,
+			WHITE, fundoX + 10, fundoY + 10, 0,
+			edificioSelecionado->name);
+
+		if (strcmp(edificioSelecionado->name, "House") == 0){
+			char str[100];
+			sprintf(str, "%s%d", "Colonists: ", ListCountCharacters(edificioSelecionado->colonists));
+
+			al_draw_text(textos,
+				WHITE, fundoX + 10, fundoY + 48, 0,
+				str);
+		}
+
+		DrawBoundingBoxBuilding(edificioSelecionado);
+	}
 }
 
 int main(int argc, char **argv){
@@ -1473,18 +1687,9 @@ int main(int argc, char **argv){
 
 			UpdateInput(); //Desenha também hovers do rato
 
-			if (bonecoSelecionado != NULL){
-				al_draw_rectangle(bonecoSelecionado->x + offsetX,bonecoSelecionado->y + offsetY,bonecoSelecionado->x + 16 + offsetX,bonecoSelecionado->y + 24 + offsetY,
-					RED, 2);
+			DrawEdificioSelecionado();
 
-				if (!bonecoHovered){
-					DrawHoveredTile();
-				}
-			}
-
-			if (bonecoSelecionado){
-				DrawNoWalkConstructionTiles();
-			}
+			DrawBonecoSelecionado();
 
 			al_flip_display();
 		}
