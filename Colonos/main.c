@@ -176,7 +176,14 @@ typedef struct node
 	struct node * next;
 	int contadorVizinhos;
 }* Node;
-//
+
+
+//Descreve uma opção / tecla que pode ser premida
+typedef struct opcao
+{
+	char tecla; //Tecla que pode ser premida
+	struct opcao * next;
+}* Opcao;
 
 //Matriz que define o mapa
 //TODO: Ler mapa a partir de ficheiro
@@ -231,6 +238,9 @@ Character bonequinhos = NULL;
 //Lista ligada de casas vazia
 Building edificios = NULL;
 
+//Lista ligada de opcoes disponiveis
+Opcao opcoes = NULL;
+
 //Matriz de searchNodes
 Node searchNodes[MAPWIDTH][MAPHEIGHT];
 //Lista aberta de Nodes
@@ -240,6 +250,7 @@ Node listaFechada = NULL;
 
 //Recicladas
 Node path;
+int vizinhos[4][4];
 
 //Cenas selecionadas
 Character bonecoSelecionado = NULL;
@@ -288,6 +299,44 @@ Node InsertNode(Node lista, Node node){
 	Node aux = node;
 	aux->next = lista;
 	return aux;
+}
+
+Opcao InsertOption(Opcao opcoes, char tecla){
+	Opcao opcao = malloc(sizeof(struct opcao));
+	opcao->tecla = tecla;
+	opcao->next = opcoes;
+	return opcao;
+}
+
+bool OptionExists(char tecla){
+	Opcao aux = opcoes;
+	while (aux != NULL){
+		if (aux->tecla == tecla){
+			return true;
+		}
+	}
+	return false;
+}
+
+Opcao RemoveOption(Opcao opcoes, char tecla){
+	Opcao aux;
+	if (opcoes != NULL){
+		//Lista não está vazia
+		if (opcoes->tecla == tecla){
+			//encontramos o elemento a eliminar
+			aux = opcoes->next;
+			return aux;
+		}
+		else{
+			//não é este o elemento e eliminar, continuar a recursão
+			opcoes->next = RemoveOption(opcoes->next, tecla);
+			return opcoes;
+		}
+	}
+	else{
+		//Lista vazia
+		return opcoes;
+	}
 }
 
 //Remover elemento da lista ligada - recursivamente
@@ -353,6 +402,9 @@ void UpdateSearchNodes(){
 			node->inOpenList = false;
 			node->next = NULL;
 			node->parent = NULL;
+			for (int i = 0; i < 4; i++){
+				node->vizinhos[i] = NULL;
+			}
 
 			//Apenas é caminho se tiver 1 na segunda posição desta tile
 			if (mapDef[y][x][1] == 1 && mapDef[y][x][2] == 1){
@@ -418,7 +470,7 @@ void UpdateSearchNodes(){
 }
 
 //Devolve uma estimativa da distância entre dois tiles
-float Heuristic(x1, y1, x2, y2){
+float Heuristic(int x1, int y1, int x2, int y2){
 	return abs(x1 - x2) + abs(y1 - y2);
 }
 
@@ -1046,12 +1098,14 @@ void UpdateBuildings(Building endereco){
 
 //Encontrar edificio numa determinada posicao
 Building FindBuilding(Building endereco, int i, int j){
+	Building building = NULL;
 	while (endereco != NULL){
 		if (endereco->x == i && endereco->y == j){
-			return endereco;
+			building = endereco;
 		}
 		endereco = endereco->next;
 	}
+	return building;
 }
 
 //Desenhar o mapa
@@ -1553,26 +1607,70 @@ void UpdateInput(){
 			if (-(offsetY) > 0)
 				offsetY += TILEHEIGHT;
 		}
+
+		//Percorrer a lista de opções e executar opções premidas
+		Opcao aux = opcoes;
+		while (aux != NULL){
+			switch (aux->tecla)
+			{
+			case 'e':
+				if (al_key_down(&state, ALLEGRO_KEY_E)){
+					//Esvaziar um edificio
+					if (edificioSelecionado != NULL){
+						//retirar o bonequinho da lista da casa e colocá-lo na lista de bonequinhos
+
+						while (edificioSelecionado->colonists != NULL){
+
+							//guardar o apontador para o proximo colono nesta casa
+							Character next = edificioSelecionado->colonists->next;
+							//Colocar o colono na lista de bonequinhos
+							Character aux = edificioSelecionado->colonists;
+							aux->next = bonequinhos;
+							bonequinhos = aux;
+							//Remover o colono da lista de colonos nesta casa
+							edificioSelecionado->colonists = RemoveCharacter(edificioSelecionado->colonists, edificioSelecionado->colonists->x, edificioSelecionado->colonists->y);
+							//Passar para o proximo colono da casa
+							edificioSelecionado->colonists = next;
+						}
+					}
+					edificioSelecionado = NULL;
+				}
+				//Remover esta opção da lista de opções
+				opcoes = RemoveOption(opcoes, 'e');
+				break;
+			default:
+				break;
+			}
+			aux = aux->next;
+		}
+
 		KBLimitCounter = 0;
 	}
 	KBLimitCounter++;
 
 
 	//RATO
-	al_get_mouse_state(&mouseState);
 	if (!exitGame) {
+		al_get_mouse_state(&mouseState);
 		//DrawHoveredTile();
 		DrawCharacterBoundingBox(bonequinhos);
 		DrawBuildingHover(edificios);
+
+		//Detetar cliques
+		if (mouseState.buttons & 1 && (!mouseStateAnterior.buttons & 1)) {
+			/* Primary (e.g. left) mouse button is held. */
+			ProcessMouseClicks(bonequinhos);
+		}
+		if (mouseState.buttons & 2) {
+			/* Secondary (e.g. right) mouse button is held. */
+			bonecoSelecionado = NULL;
+			edificioSelecionado = NULL;
+		}
+
+		mouseStateAnterior = mouseState;
 	}
 
-	//Detetar cliques
-	if (mouseState.buttons & 1 && (!mouseStateAnterior.buttons & 1)) {
-		/* Primary (e.g. left) mouse button is held. */
-		ProcessMouseClicks(bonequinhos);
-	}
-
-	mouseStateAnterior = mouseState;
+	
 		
 }
 
@@ -1600,13 +1698,30 @@ void DrawEdificioSelecionado(){
 			al_draw_text(textos,
 				WHITE, fundoX + 10, fundoY + 48, 0,
 				str);
+
+			int hSpace = 0;
+
+			al_draw_text(titulos,
+				WHITE, fundoX + 430, fundoY + 25, 0,
+				"E");
+
+			hSpace = 20;
+
+			al_draw_text(textos,
+				WHITE, fundoX + 435 + hSpace, fundoY + 34, 0,
+			"Empty house");
+
+			if (OptionExists('e') == false && ListCountCharacters(edificioSelecionado->colonists) > 0){
+				opcoes = InsertOption(opcoes, 'e');
+			}
+			
 		}
 
 		DrawBoundingBoxBuilding(edificioSelecionado);
 	}
 }
 
-int main(int argc, char **argv){
+int main(){
 
 	//INICIALIZAÇÃO
 	InitializeAllegro();
@@ -1614,51 +1729,20 @@ int main(int argc, char **argv){
 	//Load assets
 	LoadAssets();
 
-	quintas = InsertFarm(quintas, 8, 1, 14);
-	quintas = InsertFarm(quintas, 8, 2, 17);
-	quintas = InsertFarm(quintas, 8, 2, 20);
-	quintas = InsertFarm(quintas, 9, 1, 23);
-	quintas = InsertFarm(quintas, 9, 2, 26);
-	quintas = InsertFarm(quintas, 9, 3, 29);
-	quintas = InsertFarm(quintas, 10, 1, 32);
-
 	edificios = InsertBuilding(edificios, 15, 5, 35);
 	edificios = InsertBuilding(edificios, 16, 5, 36);
 
-	edificios = InsertBuilding(edificios, 11, 3, 41);
-	edificios = InsertBuilding(edificios, 12, 3, 42);
-	edificios = InsertBuilding(edificios, 11, 4, 43);
-	edificios = InsertBuilding(edificios, 12, 4, 44);
-
-	edificios = InsertBuilding(edificios, 1, 7, 37);
-	edificios = InsertBuilding(edificios, 2, 7, 38);
-
-	edificios = InsertBuilding(edificios, 2, 12, 39);
-
-	edificios = InsertBuilding(edificios, 7, 6, 40);
-
-	edificios = InsertBuilding(edificios, 12, 10, 45);
-
-	edificios = InsertBuilding(edificios, 8, 3, 46);
+	//Primeira casa
+	Building primeiraCasa = InsertBuilding(edificios, 11, 3, 39);
+	primeiraCasa->minTimer = 0;
+	primeiraCasa->constructionCounter = 32;
+	edificios = primeiraCasa;
 
 	//Inicilizar Pathfinding
 	UpdateSearchNodes();
 
-	/*bonequinhos = InsertCharacter(bonequinhos, men1, 300, 100, 1, 0);
-	bonequinhos = InsertCharacter(bonequinhos, woman1, 1000, 200, 1, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men2, 320, 640, 3, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman2, 10, 300, 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men3, 150, 620, 3, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman3, 200, 330, 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men4, 170, 650, 3, 1);*/
-	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(20, 0), WorldToPixel(16, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(0, 0), WorldToPixel(2, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men3, WorldToPixel(10, 0), WorldToPixel(7, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men4, WorldToPixel(8, 0), WorldToPixel(2, 1), 2, 1);
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(20, 0), WorldToPixel(18, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman3, WorldToPixel(2, 0), WorldToPixel(13, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman4, WorldToPixel(18, 0), WorldToPixel(14, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(5, 1), 2, 1);
 	
 	//boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), 0, 3);
 
