@@ -96,6 +96,10 @@ ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN, YELLOW, GREY, WHITE;
 float offsetX = 0;
 float offsetY = 0;
 
+int fundoX, fundoY;
+fundoX = 20;
+fundoY = DISPLAYHEIGHT - 100;
+
 //limitador de input do teclado
 int KBLimit = 5;
 int KBLimitCounter = 0;
@@ -314,6 +318,7 @@ bool OptionExists(char tecla){
 		if (aux->tecla == tecla){
 			return true;
 		}
+		aux = aux->next;
 	}
 	return false;
 }
@@ -1192,7 +1197,7 @@ float WorldToPixel(int value, int WidthOrHeight){
 
 bool AlmostEqualRelative(float A, float B)
 {
-	float maxRelDiff = VELOCIDADE_BONECOS / 100;
+	float maxRelDiff = VELOCIDADE_BONECOS / 50;
 	// Calculate the difference.
 	float diff = fabs(A - B);
 	A = fabs(A);
@@ -1302,6 +1307,15 @@ void UpdateCharacters(Character endereco){
 					edificio->colonists = endereco;
 					//Remover a tarefa
 					endereco->tarefa = NULL;
+
+					//Remover o boneco selecionado
+					if (bonecoSelecionado != NULL){
+						if (endereco->x == bonecoSelecionado->x && endereco->y == bonecoSelecionado->y){
+							bonecoSelecionado = NULL;
+						}
+					}
+					
+					
 					break;
 				default:
 					break;
@@ -1513,7 +1527,6 @@ void ProcessMouseClicks(Character bonequinhos){
 				if (strcmp(aux->name, "House") == 0){
 					//Clique em cima de uma casa, mandar boneco para casa
 					bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1) + 1);
-					
 					//Tarefa - Ir até casa
 					Tarefa tarefa = (Tarefa)malloc(sizeof(struct tarefa));
 					tarefa->type = 0;
@@ -1533,6 +1546,7 @@ void ProcessMouseClicks(Character bonequinhos){
 	
 
 		if (continuar){
+			
 			//Andar para uma localização no mapa
 			bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
 			bonecoSelecionado = NULL;
@@ -1565,6 +1579,31 @@ void ProcessMouseClicks(Character bonequinhos){
 //Desenha o boneco selecionado e a tile que está hovered
 void DrawBonecoSelecionado(){
 	if (bonecoSelecionado != NULL){
+
+		//Fundo
+		al_draw_filled_rounded_rectangle(fundoX, fundoY, DISPLAYWIDTH - 20, DISPLAYHEIGHT - 20,
+			10, 10, GREY);
+
+		//Nome do edifício
+		al_draw_text(titulos,
+			WHITE, fundoX + 10, fundoY + 10, 0,
+			"Colonist");
+
+		//Opções - Construir
+		int hSpace = 0;
+
+		al_draw_text(titulos,
+			WHITE, fundoX + 430, fundoY + 25, 0,
+			"B");
+
+		hSpace = 25;
+
+		al_draw_text(textos,
+			WHITE, fundoX + 430 + hSpace, fundoY + 34, 0,
+			"Build");
+
+		
+
 		al_draw_rectangle(bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, bonecoSelecionado->x + 16 + offsetX, bonecoSelecionado->y + 24 + offsetY,
 			RED, 2);
 
@@ -1638,6 +1677,7 @@ void UpdateInput(){
 				//Remover esta opção da lista de opções
 				opcoes = RemoveOption(opcoes, 'e');
 				break;
+			
 			default:
 				break;
 			}
@@ -1678,10 +1718,6 @@ void UpdateInput(){
 void DrawEdificioSelecionado(){
 	if (edificioSelecionado != NULL){
 
-		int fundoX, fundoY;
-		fundoX = 20;
-		fundoY = DISPLAYHEIGHT - 100;
-
 		//Fundo
 		al_draw_filled_rounded_rectangle(fundoX, fundoY, DISPLAYWIDTH - 20, DISPLAYHEIGHT - 20,
 			10, 10, GREY);
@@ -1692,27 +1728,36 @@ void DrawEdificioSelecionado(){
 			edificioSelecionado->name);
 
 		if (strcmp(edificioSelecionado->name, "House") == 0){
+
+			int nColonistas = ListCountCharacters(edificioSelecionado->colonists);
+
 			char str[100];
-			sprintf(str, "%s%d", "Colonists: ", ListCountCharacters(edificioSelecionado->colonists));
+			sprintf(str, "%s%d", "Colonists: ", nColonistas);
 
 			al_draw_text(textos,
 				WHITE, fundoX + 10, fundoY + 48, 0,
 				str);
 
-			int hSpace = 0;
+			if (nColonistas > 0){
 
-			al_draw_text(titulos,
-				WHITE, fundoX + 430, fundoY + 25, 0,
-				"E");
+				//Opção de esvaziar a casa
 
-			hSpace = 20;
+				int hSpace = 0;
 
-			al_draw_text(textos,
-				WHITE, fundoX + 435 + hSpace, fundoY + 34, 0,
-			"Empty house");
+				al_draw_text(titulos,
+					WHITE, fundoX + 430, fundoY + 25, 0,
+					"E");
 
-			if (OptionExists('e') == false && ListCountCharacters(edificioSelecionado->colonists) > 0){
-				opcoes = InsertOption(opcoes, 'e');
+				hSpace = 20;
+
+				al_draw_text(textos,
+					WHITE, fundoX + 435 + hSpace, fundoY + 34, 0,
+				"Empty house");
+
+				if (OptionExists('e') == false){
+					opcoes = InsertOption(opcoes, 'e');
+				}
+				
 			}
 			
 		}
