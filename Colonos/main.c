@@ -104,6 +104,10 @@ fundoY = DISPLAYHEIGHT - 100;
 int KBLimit = 5;
 int KBLimitCounter = 0;
 
+//Contadores de recursos
+int pedra = 100, madeira = 100, comida = 100;
+int maxPedra = 300, maxMadeira = 300, maxComida = 300;
+
 // *********************************************************************************************************** //
 // ESTRUTURAS DE DADOS //
 
@@ -115,10 +119,11 @@ typedef struct farm
 	int timer; //Contador de há quanto tempo a quinta está no estado atual
 	int phase; //Fase em que a quinta se encontra (1, 2, 3)
 	int minTimer; //Tempo necessário para passar para a próxima fase
-	char *name;
+	char *name; //Nome descritivo do tipo de quinta
 	struct farm *next; //Apontador para o elemento seguinte
 }* Farm;
 
+//Descreve uma tarefa a executar por um colono
 typedef struct tarefa
 {
 	//0 - Ir para casa;
@@ -131,9 +136,9 @@ typedef struct tarefa
 	//7 - Apanhar Vegetais
 	//8 - Descarregar Vegetais
 	//9 - Descansar
-	int type; 
+	int type; //Tipo de tarefa
 	int x, y; //Coordenadas da tarefa a executar
-	struct building *building; //Apontador para o edificio da tarefa
+	struct building *building; //Apontador para o edificio da tarefa, se houver
 	struct tarefa *next; //Proxima tafera a executar
 }* Tarefa;
 
@@ -143,9 +148,9 @@ typedef struct character
 	ALLEGRO_BITMAP *spriteSheet; //Spritesheet que contém a animação desta personagem
 	int movimento; //0 - Parado, 1 - Movimento
 	int direcao; //0 - Baixo; 1 - Esquerda; 2 - Direita; 3 - Cima
-	float x, y; //Posicao
-	int animationFrame;
-	int animationTimer;
+	float x, y; //Posicao, em pixeis
+	int animationFrame; //Frame da animação atual
+	int animationTimer; //Contador do tempo de cada frame
 	struct character *next; //Apontador para o elemento seguinte
 	struct node * path; //Caminho que o boneco tem a percorrer
 	struct tarefa *tarefa; //Lista de tarefas a executar
@@ -160,8 +165,8 @@ typedef struct building
 	int minTimer; //Tempo que o edifício demora a ser construído
 	int constructionCounter; //Vai aumentando cada vez que minTimer = timer, até ao máximo de 32 (altura da sprite)
 	struct building *next; //Apontador para o elemento seguinte
-	struct character *colonists;
-	char name[];
+	struct character *colonists; //Colonos que se encontram na casa
+	char name[]; //Nome descritivo do edifício
 }* Building;
 
 
@@ -177,8 +182,8 @@ typedef struct node
 	float distanceToTarget; //Distância aproximada desde este node até ao alvo
 	float distanceTravelled; //Distância já viajada da origem até este node
 	struct node * vizinhos[4]; //Apontadores para os vizinhos deste node (cima, baixo, esquerda, direita)
-	struct node * next;
-	int contadorVizinhos;
+	struct node * next; //Próximo node
+	int contadorVizinhos; //Nº de vizinhos uteis deste node
 }* Node;
 
 
@@ -773,66 +778,6 @@ int InitializeAllegro(){
 	return 1;
 }
 
-//Load assets from disk
-void LoadAssets(){
-	water = al_load_bitmap("assets/water.png");
-	tree7 = al_load_bitmap("assets/tree7.png");
-	tree6 = al_load_bitmap("assets/tree6.png");
-	tree5 = al_load_bitmap("assets/tree5.png");
-	tree4 = al_load_bitmap("assets/tree4.png");
-	tree3 = al_load_bitmap("assets/tree3.png");
-	tree2 = al_load_bitmap("assets/tree2.png");
-	tree1 = al_load_bitmap("assets/tree1.png");
-	rock3 = al_load_bitmap("assets/rock3.png");
-	rock2 = al_load_bitmap("assets/rock2.png");
-	rock1 = al_load_bitmap("assets/rock1.png");
-	grass = al_load_bitmap("assets/grass.png");
-	chopped_trees = al_load_bitmap("assets/chopped_trees.png");
-	farm1_1 = al_load_bitmap("assets/farm1_1.png");
-	farm1_2 = al_load_bitmap("assets/farm1_2.png");
-	farm1_3 = al_load_bitmap("assets/farm1_3.png");
-	farm2_1 = al_load_bitmap("assets/farm2_1.png");
-	farm2_2 = al_load_bitmap("assets/farm2_2.png");
-	farm2_3 = al_load_bitmap("assets/farm2_3.png");
-	farm3_1 = al_load_bitmap("assets/farm3_1.png");
-	farm3_2 = al_load_bitmap("assets/farm3_2.png");
-	farm3_3 = al_load_bitmap("assets/farm3_3.png");
-	farm4_1 = al_load_bitmap("assets/farm4_1.png");
-	farm4_2 = al_load_bitmap("assets/farm4_2.png");
-	farm4_3 = al_load_bitmap("assets/farm4_3.png");
-	farm5_1 = al_load_bitmap("assets/farm5_1.png");
-	farm5_2 = al_load_bitmap("assets/farm5_2.png");
-	farm5_3 = al_load_bitmap("assets/farm5_3.png");
-	farm6_1 = al_load_bitmap("assets/farm6_1.png");
-	farm6_2 = al_load_bitmap("assets/farm6_2.png");
-	farm6_3 = al_load_bitmap("assets/farm6_3.png");
-	farm7_1 = al_load_bitmap("assets/farm7_1.png");
-	farm7_2 = al_load_bitmap("assets/farm7_2.png");
-	farm7_3 = al_load_bitmap("assets/farm7_3.png");
-
-	men1 = al_load_bitmap("assets/characters/men1.png");
-	men2 = al_load_bitmap("assets/characters/men2.png");
-	men3 = al_load_bitmap("assets/characters/men3.png");
-	men4 = al_load_bitmap("assets/characters/men4.png");
-	woman1 = al_load_bitmap("assets/characters/woman1.png");
-	woman2 = al_load_bitmap("assets/characters/woman2.png");
-	woman3 = al_load_bitmap("assets/characters/woman3.png");
-	woman4 = al_load_bitmap("assets/characters/woman4.png");
-
-	city_hall1 = al_load_bitmap("assets/buildings/city_hall1.png");
-	city_hall2 = al_load_bitmap("assets/buildings/city_hall2.png");
-	farm1 = al_load_bitmap("assets/buildings/farm1.png");
-	farm2 = al_load_bitmap("assets/buildings/farm2.png");
-	house1 = al_load_bitmap("assets/buildings/house1.png");
-	house2 = al_load_bitmap("assets/buildings/house2.png");
-	warehouse1 = al_load_bitmap("assets/buildings/warehouse1.png");
-	warehouse2 = al_load_bitmap("assets/buildings/warehouse2.png");
-	warehouse3 = al_load_bitmap("assets/buildings/warehouse3.png");
-	warehouse4 = al_load_bitmap("assets/buildings/warehouse4.png");
-	house3 = al_load_bitmap("assets/buildings/house3.png");
-	house4 = al_load_bitmap("assets/buildings/house4.png");
-}
-
 //Criar o mapa
 void UpdateMap(){
 	
@@ -1013,7 +958,7 @@ Building InsertBuilding(Building endereco, int j, int i, int type){
 }
 
 //Inserir quinta
-Farm InsertFarm(Farm endereco, int i, int j, int type){
+Farm InsertFarm(Farm endereco, int j, int i, int type){
 	//Aloca o espaço necessário na memória
 	//Devolve o endereço de memória do espaço alocado
 	Farm farm = (Farm)malloc(sizeof(struct farm));
@@ -1589,21 +1534,6 @@ void DrawBonecoSelecionado(){
 			WHITE, fundoX + 10, fundoY + 10, 0,
 			"Colonist");
 
-		//Opções - Construir
-		int hSpace = 0;
-
-		al_draw_text(titulos,
-			WHITE, fundoX + 430, fundoY + 25, 0,
-			"B");
-
-		hSpace = 25;
-
-		al_draw_text(textos,
-			WHITE, fundoX + 430 + hSpace, fundoY + 34, 0,
-			"Build");
-
-		
-
 		al_draw_rectangle(bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, bonecoSelecionado->x + 16 + offsetX, bonecoSelecionado->y + 24 + offsetY,
 			RED, 2);
 
@@ -1612,6 +1542,73 @@ void DrawBonecoSelecionado(){
 		}
 
 		DrawNoWalkConstructionTiles();
+	}
+}
+
+//Desenha a UI de edificio selecionado
+void DrawEdificioSelecionado(){
+	if (edificioSelecionado != NULL){
+
+		//Fundo
+		al_draw_filled_rounded_rectangle(fundoX, fundoY, DISPLAYWIDTH - 20, DISPLAYHEIGHT - 20,
+			10, 10, GREY);
+
+		//Nome do edifício
+		al_draw_text(titulos,
+			WHITE, fundoX + 10, fundoY + 10, 0,
+			edificioSelecionado->name);
+
+		if (strcmp(edificioSelecionado->name, "House") == 0){
+
+			int nColonistas = ListCountCharacters(edificioSelecionado->colonists);
+
+			char str[100];
+			sprintf(str, "%s%d", "Colonists: ", nColonistas);
+
+			al_draw_text(textos,
+				WHITE, fundoX + 10, fundoY + 48, 0,
+				str);
+
+			if (nColonistas > 0){
+
+				//Opção de esvaziar a casa
+
+				int hSpace = 0;
+
+				al_draw_text(titulos,
+					WHITE, fundoX + 430, fundoY + 25, 0,
+					"E");
+
+				hSpace = 20;
+
+				al_draw_text(textos,
+					WHITE, fundoX + 435 + hSpace, fundoY + 34, 0,
+					"Empty house");
+
+				if (OptionExists('e') == false){
+					opcoes = InsertOption(opcoes, 'e');
+				}
+
+			}
+
+		}
+
+		DrawBoundingBoxBuilding(edificioSelecionado);
+	}
+}
+
+void DrawFixedUI(){
+	if (!exitGame){
+		al_draw_filled_rounded_rectangle(DISPLAYWIDTH - 460, 20, DISPLAYWIDTH - 20, 60,
+			10, 10, GREY);
+
+		char str[100];
+		sprintf(str, "%s%d%s%d%s%d%s%d", "Pedra: ", pedra, "          Madeira: ", madeira, "          Comida: ", comida, "          Colonos: ",ListCountCharacters(bonequinhos));
+
+		//Nome do edifício
+		al_draw_text(textos,
+			WHITE, DISPLAYWIDTH - 430, 32, 0,
+			str);
 	}
 }
 
@@ -1714,66 +1711,8 @@ void UpdateInput(){
 		
 }
 
-//Desenha a UI de edificio selecionado
-void DrawEdificioSelecionado(){
-	if (edificioSelecionado != NULL){
-
-		//Fundo
-		al_draw_filled_rounded_rectangle(fundoX, fundoY, DISPLAYWIDTH - 20, DISPLAYHEIGHT - 20,
-			10, 10, GREY);
-
-		//Nome do edifício
-		al_draw_text(titulos,
-			WHITE, fundoX + 10, fundoY + 10, 0,
-			edificioSelecionado->name);
-
-		if (strcmp(edificioSelecionado->name, "House") == 0){
-
-			int nColonistas = ListCountCharacters(edificioSelecionado->colonists);
-
-			char str[100];
-			sprintf(str, "%s%d", "Colonists: ", nColonistas);
-
-			al_draw_text(textos,
-				WHITE, fundoX + 10, fundoY + 48, 0,
-				str);
-
-			if (nColonistas > 0){
-
-				//Opção de esvaziar a casa
-
-				int hSpace = 0;
-
-				al_draw_text(titulos,
-					WHITE, fundoX + 430, fundoY + 25, 0,
-					"E");
-
-				hSpace = 20;
-
-				al_draw_text(textos,
-					WHITE, fundoX + 435 + hSpace, fundoY + 34, 0,
-				"Empty house");
-
-				if (OptionExists('e') == false){
-					opcoes = InsertOption(opcoes, 'e');
-				}
-				
-			}
-			
-		}
-
-		DrawBoundingBoxBuilding(edificioSelecionado);
-	}
-}
-
-int main(){
-
-	//INICIALIZAÇÃO
-	InitializeAllegro();
-
-	//Load assets
-	LoadAssets();
-
+void LoadInitialState(){
+	//Edifícios iniciais
 	edificios = InsertBuilding(edificios, 15, 5, 35);
 	edificios = InsertBuilding(edificios, 16, 5, 36);
 
@@ -1783,43 +1722,146 @@ int main(){
 	primeiraCasa->constructionCounter = 32;
 	edificios = primeiraCasa;
 
-	//Inicilizar Pathfinding
-	UpdateSearchNodes();
+	//Casas a ser construídas
+	edificios = InsertBuilding(edificios, 16, 7, 40);
+	edificios = InsertBuilding(edificios, 5, 12, 45);
+	edificios = InsertBuilding(edificios, 23, 5, 46);
 
+	//Warehouse
+	edificios = InsertBuilding(edificios, 16, 9, 41);
+	edificios = InsertBuilding(edificios, 17, 9, 42);
+	edificios = InsertBuilding(edificios, 16, 10, 43);
+	edificios = InsertBuilding(edificios, 17, 10, 44);
+
+	//Farmhouse
+	edificios = InsertBuilding(edificios, 5, 8, 37);
+	edificios = InsertBuilding(edificios, 6, 8, 38);
+
+	//Quintas
+	quintas = InsertFarm(quintas, 5, 9, 17);
+	quintas = InsertFarm(quintas, 6, 9, 18);
+
+	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
 	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(5, 1), 2, 1);
-	
-	//boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), 0, 3);
+}
 
+//Load assets from disk
+void Load(){
+	water = al_load_bitmap("assets/water.png");
+	tree7 = al_load_bitmap("assets/tree7.png");
+	tree6 = al_load_bitmap("assets/tree6.png");
+	tree5 = al_load_bitmap("assets/tree5.png");
+	tree4 = al_load_bitmap("assets/tree4.png");
+	tree3 = al_load_bitmap("assets/tree3.png");
+	tree2 = al_load_bitmap("assets/tree2.png");
+	tree1 = al_load_bitmap("assets/tree1.png");
+	rock3 = al_load_bitmap("assets/rock3.png");
+	rock2 = al_load_bitmap("assets/rock2.png");
+	rock1 = al_load_bitmap("assets/rock1.png");
+	grass = al_load_bitmap("assets/grass.png");
+	chopped_trees = al_load_bitmap("assets/chopped_trees.png");
+	farm1_1 = al_load_bitmap("assets/farm1_1.png");
+	farm1_2 = al_load_bitmap("assets/farm1_2.png");
+	farm1_3 = al_load_bitmap("assets/farm1_3.png");
+	farm2_1 = al_load_bitmap("assets/farm2_1.png");
+	farm2_2 = al_load_bitmap("assets/farm2_2.png");
+	farm2_3 = al_load_bitmap("assets/farm2_3.png");
+	farm3_1 = al_load_bitmap("assets/farm3_1.png");
+	farm3_2 = al_load_bitmap("assets/farm3_2.png");
+	farm3_3 = al_load_bitmap("assets/farm3_3.png");
+	farm4_1 = al_load_bitmap("assets/farm4_1.png");
+	farm4_2 = al_load_bitmap("assets/farm4_2.png");
+	farm4_3 = al_load_bitmap("assets/farm4_3.png");
+	farm5_1 = al_load_bitmap("assets/farm5_1.png");
+	farm5_2 = al_load_bitmap("assets/farm5_2.png");
+	farm5_3 = al_load_bitmap("assets/farm5_3.png");
+	farm6_1 = al_load_bitmap("assets/farm6_1.png");
+	farm6_2 = al_load_bitmap("assets/farm6_2.png");
+	farm6_3 = al_load_bitmap("assets/farm6_3.png");
+	farm7_1 = al_load_bitmap("assets/farm7_1.png");
+	farm7_2 = al_load_bitmap("assets/farm7_2.png");
+	farm7_3 = al_load_bitmap("assets/farm7_3.png");
+
+	men1 = al_load_bitmap("assets/characters/men1.png");
+	men2 = al_load_bitmap("assets/characters/men2.png");
+	men3 = al_load_bitmap("assets/characters/men3.png");
+	men4 = al_load_bitmap("assets/characters/men4.png");
+	woman1 = al_load_bitmap("assets/characters/woman1.png");
+	woman2 = al_load_bitmap("assets/characters/woman2.png");
+	woman3 = al_load_bitmap("assets/characters/woman3.png");
+	woman4 = al_load_bitmap("assets/characters/woman4.png");
+
+	city_hall1 = al_load_bitmap("assets/buildings/city_hall1.png");
+	city_hall2 = al_load_bitmap("assets/buildings/city_hall2.png");
+	farm1 = al_load_bitmap("assets/buildings/farm1.png");
+	farm2 = al_load_bitmap("assets/buildings/farm2.png");
+	house1 = al_load_bitmap("assets/buildings/house1.png");
+	house2 = al_load_bitmap("assets/buildings/house2.png");
+	warehouse1 = al_load_bitmap("assets/buildings/warehouse1.png");
+	warehouse2 = al_load_bitmap("assets/buildings/warehouse2.png");
+	warehouse3 = al_load_bitmap("assets/buildings/warehouse3.png");
+	warehouse4 = al_load_bitmap("assets/buildings/warehouse4.png");
+	house3 = al_load_bitmap("assets/buildings/house3.png");
+	house4 = al_load_bitmap("assets/buildings/house4.png");
+
+	//Load do estado inicial do jogo
+	LoadInitialState();
+}
+
+void Update(){
+	UpdateFarms(quintas);
+
+	UpdateCharacters(bonequinhos);
+
+	UpdateBuildings(edificios);
+
+	UpdateMap();
+}
+
+void Draw(){
+	al_clear_to_color(al_map_rgb(0, 0, 0));
+
+	DrawMap();
+
+	DrawCharacters(bonequinhos);
+
+	UpdateInput(); //Desenha também hovers do rato
+
+	DrawEdificioSelecionado();
+
+	DrawBonecoSelecionado();
+
+	DrawFixedUI();
+
+	al_flip_display();
+}
+
+//Entry point
+int main(){
+
+	//INICIALIZAÇÃO
+	InitializeAllegro();
+
+	//Load assets e estado inicial
+	Load();
+
+	//Gerar grafo de Pathfinding
+	UpdateSearchNodes();
 
 	//GAME LOOP
 	while (!exitGame){
 
+		//Allegro timer
 		ALLEGRO_EVENT ev;
 		al_wait_for_event(event_queue, &ev);
-
 		if (ev.type == ALLEGRO_EVENT_TIMER) {
-			UpdateMap();
 
-			UpdateFarms(quintas);
+			Update();
 
-			UpdateCharacters(bonequinhos);
-
-			UpdateBuildings(edificios);
-
-			al_clear_to_color(al_map_rgb(0, 0, 0));
-
-			DrawMap();
-
-			DrawCharacters(bonequinhos);
-
-			UpdateInput(); //Desenha também hovers do rato
-
-			DrawEdificioSelecionado();
-
-			DrawBonecoSelecionado();
-
-			al_flip_display();
+			Draw();
 		}
 	}
+
+	return 1;
 }
