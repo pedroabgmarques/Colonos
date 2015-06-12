@@ -1564,15 +1564,13 @@ void ProcessMouseClicks(Character bonequinhos){
 		if (bonecoSelecionado){
 			if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
 				printf("Clique em madeira!\n");
-
-				//Encontrar um vizinho em que se possa andar
-				FazerBonecoAndarVizinho(xi, yi);
-				continuar = false;
-
 			}
 			if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
 				printf("Clique em pedra!\n");
 			}
+			//Encontrar um vizinho em que se possa andar
+			FazerBonecoAndarVizinho(xi, yi);
+			continuar = false;
 		}
 	}
 }
