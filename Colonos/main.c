@@ -139,7 +139,6 @@ typedef struct tarefa
 	int type; //Tipo de tarefa
 	int x, y; //Coordenadas da tarefa a executar
 	struct building *building; //Apontador para o edificio da tarefa, se houver
-	struct tarefa *next; //Proxima tafera a executar
 }* Tarefa;
 
 //Descreve um bonequinho
@@ -1503,10 +1502,12 @@ void ProcessMouseClicks(Character bonequinhos){
 	
 
 		if (continuar){
-			
 			//Andar para uma localização no mapa
-			bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
-			bonecoSelecionado = NULL;
+			bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));	
+			
+			if (bonecoSelecionado->path != NULL){
+				bonecoSelecionado = NULL;
+			}
 		}
 		
 	}
@@ -1536,17 +1537,15 @@ void ProcessMouseClicks(Character bonequinhos){
 	if (continuar){
 		int xi = PixelToWorld((x / TILEWIDTH)  * TILEWIDTH, 0);
 		int yi = PixelToWorld((y / TILEHEIGHT)  * TILEHEIGHT, 1);
-
-		printf("Processing..\n");
-		printf("xi:%d\n", xi);
-		printf("yi:%d\n", yi);
-		printf("mapDef:%d\n", mapDef[yi][xi][0]);
-
-		if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
-			printf("Clique em madeira!\n");
-		}
-		if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
-			printf("Clique em pedra!\n");
+		
+		
+		if (bonecoSelecionado){
+			if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
+				printf("Clique em madeira!\n");
+			}
+			if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
+				printf("Clique em pedra!\n");
+			}
 		}
 	}
 }
