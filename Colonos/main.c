@@ -194,6 +194,9 @@ typedef struct opcao
 }* Opcao;
 
 //Matriz que define o mapa
+//[0] - Tipo de sprite
+//[1] - Possibilidade de andar
+//[2] - Possibilidade de construir
 //TODO: Ler mapa a partir de ficheiro
 int mapDef[MAPWIDTH][MAPHEIGHT][3] = 
 {
@@ -1450,6 +1453,25 @@ void DrawBuildingHover(Building edificios){
 	}
 }
 
+//Faz o boneco andar para um vizinho de determinadas coordenadas
+void FazerBonecoAndarVizinho(int xi, int yi){
+	if (mapDef[yi][xi + 1][1] == 1){
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi + 1 - offsetX, yi - offsetY);
+	}
+	if (mapDef[yi][xi - 1][1] == 1 && bonecoSelecionado->path == NULL){
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - 1 - offsetX, yi - offsetY);
+	}
+	if (mapDef[yi + 1][xi][1] == 1 && bonecoSelecionado->path == NULL){
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - offsetX, yi + 1 - offsetY);
+	}
+	if (mapDef[yi - 1][xi][1] == 1 && bonecoSelecionado->path == NULL){
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - offsetX, yi - 1 - offsetY);
+	}
+	if (bonecoSelecionado->path != NULL){
+		bonecoSelecionado = NULL;
+	}
+}
+
 void ProcessMouseClicks(Character bonequinhos){
 	x = mouseState.x;
 	y = mouseState.y;
@@ -1542,6 +1564,11 @@ void ProcessMouseClicks(Character bonequinhos){
 		if (bonecoSelecionado){
 			if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
 				printf("Clique em madeira!\n");
+
+				//Encontrar um vizinho em que se possa andar
+				FazerBonecoAndarVizinho(xi, yi);
+				continuar = false;
+
 			}
 			if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
 				printf("Clique em pedra!\n");
