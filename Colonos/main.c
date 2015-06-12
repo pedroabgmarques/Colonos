@@ -1531,6 +1531,24 @@ void ProcessMouseClicks(Character bonequinhos){
 
 		aux = aux->next;
 	}
+
+	//Verificar clique em cima de pedra
+	if (continuar){
+		int xi = PixelToWorld((x / TILEWIDTH)  * TILEWIDTH, 0);
+		int yi = PixelToWorld((y / TILEHEIGHT)  * TILEHEIGHT, 1);
+
+		printf("Processing..\n");
+		printf("xi:%d\n", xi);
+		printf("yi:%d\n", yi);
+		printf("mapDef:%d\n", mapDef[yi][xi][0]);
+
+		if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
+			printf("Clique em madeira!\n");
+		}
+		if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
+			printf("Clique em pedra!\n");
+		}
+	}
 }
 
 //Desenha o boneco selecionado e a tile que está hovered
@@ -1735,23 +1753,23 @@ void LoadInitialState(){
 	edificios = primeiraCasa;
 
 	//Casas a ser construídas
-	edificios = InsertBuilding(edificios, 16, 7, 40);
+	/*edificios = InsertBuilding(edificios, 16, 7, 40);
 	edificios = InsertBuilding(edificios, 5, 12, 45);
-	edificios = InsertBuilding(edificios, 23, 5, 46);
+	edificios = InsertBuilding(edificios, 23, 5, 46);*/
 
 	//Warehouse
-	edificios = InsertBuilding(edificios, 16, 9, 41);
+	/*edificios = InsertBuilding(edificios, 16, 9, 41);
 	edificios = InsertBuilding(edificios, 17, 9, 42);
 	edificios = InsertBuilding(edificios, 16, 10, 43);
-	edificios = InsertBuilding(edificios, 17, 10, 44);
+	edificios = InsertBuilding(edificios, 17, 10, 44);*/
 
 	//Farmhouse
-	edificios = InsertBuilding(edificios, 5, 8, 37);
-	edificios = InsertBuilding(edificios, 6, 8, 38);
+	/*edificios = InsertBuilding(edificios, 5, 8, 37);
+	edificios = InsertBuilding(edificios, 6, 8, 38);*/
 
 	//Quintas
-	quintas = InsertFarm(quintas, 5, 9, 17);
-	quintas = InsertFarm(quintas, 6, 9, 18);
+	/*quintas = InsertFarm(quintas, 5, 9, 17);
+	quintas = InsertFarm(quintas, 6, 9, 18);*/
 
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
