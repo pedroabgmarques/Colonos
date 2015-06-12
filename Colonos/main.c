@@ -138,7 +138,9 @@ typedef struct tarefa
 	//9 - Descansar
 	int type; //Tipo de tarefa
 	int x, y; //Coordenadas da tarefa a executar
+	int tempo, tempoExecucao;
 	struct building *building; //Apontador para o edificio da tarefa, se houver
+	struct tarefa * next; //Apontador para a proxima tarefa
 }* Tarefa;
 
 //Descreve um bonequinho
@@ -304,6 +306,64 @@ void ResetSearchNodes(){
 	}
 }
 
+//Insere uma tarefa numa lista de tarefas
+Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edificio){
+	Tarefa tarefa = malloc(sizeof(struct tarefa));
+	tarefa->type = type;
+	tarefa->x = x;
+	tarefa->y = y;
+	
+	switch (type)
+	{
+	case 0:
+		//Ir para casa
+		tarefa->tempo = 0;
+		break;
+	case 1:
+		//Apanhar Madeira
+		tarefa->tempo = 2000;
+		break;
+	case 2:
+		//Descarregar madeira
+		tarefa->tempo = 500;
+		break;
+	case 3:
+		//Apanhar pedra
+		tarefa->tempo = 10000;
+		break;
+	case 4:
+		//Descarregar pedra
+		tarefa->tempo = 1000;
+		break;
+	case 5:
+		//Apanhar peixe
+		tarefa->tempo = 3000;
+		break;
+	case 6:
+		//Descarregar peixe
+		tarefa->tempo = 300;
+		break;
+	case 7:
+		//Apanhar vegetais
+		tarefa->tempo = 2500;
+		break;
+	case 8:
+		//Descarregar vegetais
+		tarefa->tempo = 250;
+		break;
+	case 9:
+		//Descansar
+		tarefa->tempo = 12000;
+		break;
+	default:
+		break;
+	}
+	tarefa->tempoExecucao = 0;
+	tarefa->building = edificio;
+	tarefa->next = listaTarefas;
+	return tarefa;
+}
+
 Node InsertNode(Node lista, Node node){
 	Node aux = node;
 	aux->next = lista;
@@ -346,6 +406,27 @@ Opcao RemoveOption(Opcao opcoes, char tecla){
 	else{
 		//Lista vazia
 		return opcoes;
+	}
+}
+
+Tarefa RemoveTarefa(Tarefa tarefas, int type, int x, int y){
+	Tarefa aux;
+	if (tarefas != NULL){
+		//Lista não está vazia
+		if (tarefas->type == type && tarefas->x == x && tarefas->y == y){
+			//encontramos o elemento a eliminar
+			aux = tarefas->next;
+			return aux;
+		}
+		else{
+			//não é este o elemento e eliminar, continuar a recursão
+			tarefas->next = RemoveTarefa(tarefas->next, tarefas->type, tarefas->x, tarefas->y);
+			return tarefas;
+		}
+	}
+	else{
+		//Lista vazia
+		return tarefas;
 	}
 }
 
@@ -1174,6 +1255,28 @@ bool AlmostEqualRelative(float A, float B)
 	return false;
 }
 
+//Devolve a posicao X do edificio headquarters
+int XHeadQuarters(){
+	for (int i = 0; i < MAPWIDTH; i++){
+		for (int j = 0; j < MAPHEIGHT; j++){
+			if (mapDef[j][i][0] == 35){
+				return i;
+			}
+		}
+	}
+}
+
+//Devolve a posicao Y do edificio headquarters
+int YHeadQuarters(){
+	for (int i = 0; i < MAPWIDTH; i++){
+		for (int j = 0; j < MAPHEIGHT; j++){
+			if (mapDef[j][i][0] == 35){
+				return j;
+			}
+		}
+	}
+}
+
 //Atualizar os bonequinhos
 void UpdateCharacters(Character endereco){
 
@@ -1275,6 +1378,22 @@ void UpdateCharacters(Character endereco){
 					}
 					
 					
+					break;
+				case 1:
+					//Apanhar madeira
+					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+						printf("Acabamos de apanhar madeira!\n");
+						//Remover a tarefa atual
+						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+						//Mandar o boneco para o headquarters
+						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters() - offsetX, YHeadQuarters() - offsetY + 1);
+						//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 2, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL);
+					}
+					else{
+						printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+						endereco->tarefa->tempoExecucao++;
+					}
 					break;
 				default:
 					break;
@@ -1564,9 +1683,14 @@ void ProcessMouseClicks(Character bonequinhos){
 		if (bonecoSelecionado){
 			if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
 				printf("Clique em madeira!\n");
+
+				bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
+
 			}
 			if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
 				printf("Clique em pedra!\n");
+
+				bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
 			}
 			//Encontrar um vizinho em que se possa andar
 			FazerBonecoAndarVizinho(xi, yi);
