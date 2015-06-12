@@ -267,8 +267,6 @@ bool bonecoHovered = false;
 Building edificioSelecionado = NULL;
 
 //***********************************************************************************************************//
-
-//***********************************************************************************************************//
 //AI - PATHFINDING
 
 //Reinicializa o estado de todos os nodes
@@ -519,6 +517,21 @@ int ListCountCharacters(Character endereco){
 		//A função invoca-se a ela própria
 		return (1 + ListCountCharacters(endereco->next));
 	}
+}
+
+//Devolve o numero de colonos que estão dentro de casas
+int ListCountHouseCharacters(Building edificios){
+	int contador = 0;
+	Building listaEdificios = edificios;
+	while (listaEdificios != NULL){
+		Character colonos = listaEdificios->colonists;
+		while (colonos != NULL){
+			contador++;
+			colonos = colonos->next;
+		}
+		listaEdificios = listaEdificios->next;
+	}
+	return contador;
 }
 
 //Devolve o node com distância mais pequena ao objetivo
@@ -1233,7 +1246,6 @@ void UpdateCharacters(Character endereco){
 				endereco->path = RemoveNode(endereco->path, path->x, path->y);
 			}
 
-			
 		}
 		else{
 			//Chegámos ao destino, atualizar tarefas
@@ -1603,7 +1615,7 @@ void DrawFixedUI(){
 			10, 10, GREY);
 
 		char str[100];
-		sprintf(str, "%s%d%s%d%s%d%s%d", "Pedra: ", pedra, "          Madeira: ", madeira, "          Comida: ", comida, "          Colonos: ",ListCountCharacters(bonequinhos));
+		sprintf(str, "%s%d%s%d%s%d%s%d", "Pedra: ", pedra, "          Madeira: ", madeira, "          Comida: ", comida, "          Colonos: ", ListCountCharacters(bonequinhos) + ListCountHouseCharacters(edificios));
 
 		//Nome do edifício
 		al_draw_text(textos,
@@ -1744,6 +1756,8 @@ void LoadInitialState(){
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
 	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(5, 1), 2, 1);
+
+
 }
 
 //Load assets from disk
