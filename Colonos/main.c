@@ -158,6 +158,7 @@ typedef struct character
 	int madeira; //Quantidade de madeira que o boneco transporta
 	int pedra; //Quantidade de pedra que o boneco transporta
 	int comida; //Quantidade de comida que o boneco transporta
+	char * action; //Acção que o colono está a fazer num determinado momento
 }* Character;
 
 //Descreve um edificio
@@ -324,11 +325,11 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 		break;
 	case 1:
 		//Apanhar Madeira
-		tarefa->tempo = 200;
+		tarefa->tempo = 2000;
 		break;
 	case 2:
 		//Descarregar madeira
-		tarefa->tempo = 20;
+		tarefa->tempo = 200;
 		break;
 	case 3:
 		//Apanhar pedra
@@ -1226,6 +1227,7 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->madeira = 0;
 	boneco->pedra = 0;
 	boneco->comida = 0;
+	boneco->action = "Idle";
 	return boneco;
 }
 
@@ -1305,6 +1307,10 @@ void UpdateCharacters(Character endereco){
 	{
 		if (endereco->path != NULL){
 			//Esta personagem tem caminho a percorrer
+			if (endereco->action == "Idle"){
+				endereco->action = "Walking";
+			}
+			
 
 			//Atualizar a animação
 			endereco->animationTimer++;
@@ -1373,6 +1379,7 @@ void UpdateCharacters(Character endereco){
 		}
 		else{
 			//Chegámos ao destino, atualizar tarefas
+			
 			if (endereco->tarefa != NULL){
 				switch (endereco->tarefa->type)
 				{
@@ -1403,6 +1410,8 @@ void UpdateCharacters(Character endereco){
 					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 						printf("Acabamos de apanhar madeira!\n");
 
+						endereco->action = "Walking to unload wood";
+
 						endereco->madeira += 50;
 
 						//Mandar o boneco para o headquarters
@@ -1418,6 +1427,7 @@ void UpdateCharacters(Character endereco){
 					}
 					else{
 						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+						endereco->action = "Gathering wood";
 						endereco->tarefa->tempoExecucao++;
 					}
 					break;
@@ -1446,6 +1456,7 @@ void UpdateCharacters(Character endereco){
 								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX - offsetX, enderecoTarefaY - offsetY);
 
 								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
+								endereco->action = "Walking to gather wood";
 								printf("Vamos apanhar madeira!\n");
 								printf("X: %d\n", enderecoTarefaX);
 								printf("Y: %d\n", enderecoTarefaY);
@@ -1458,6 +1469,7 @@ void UpdateCharacters(Character endereco){
 						}
 						else{
 							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+							endereco->action = "Unloading wood";
 							endereco->tarefa->tempoExecucao++;
 						}
 					}
@@ -1710,6 +1722,7 @@ void ProcessMouseClicks(Character bonequinhos){
 					//Se tras coisas, descarregar
 					if (bonecoSelecionado->madeira > 0 || bonecoSelecionado->pedra > 0 || bonecoSelecionado->comida > 0){
 						//Clique em cima dos headquarters
+						bonecoSelecionado->action = "Walking to unload wood";
 						bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1) + 1);
 
 					}
@@ -1728,7 +1741,7 @@ void ProcessMouseClicks(Character bonequinhos){
 		if (continuar){
 			//Andar para uma localização no mapa
 			bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));	
-			
+			bonecoSelecionado->action = "Walking";
 			if (bonecoSelecionado->path != NULL){
 				bonecoSelecionado = NULL;
 			}
@@ -1772,6 +1785,7 @@ void ProcessMouseClicks(Character bonequinhos){
 					bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
 
 					//Encontrar um vizinho em que se possa andar
+					bonecoSelecionado->action = "Walking to gather wood";
 					FazerBonecoAndarVizinho(xi, yi);
 					continuar = false;
 				}
@@ -1803,6 +1817,10 @@ void DrawBonecoSelecionado(){
 		al_draw_text(titulos,
 			WHITE, fundoX + 10, fundoY + 10, 0,
 			"Colonist");
+
+		al_draw_text(textos,
+			WHITE, fundoX + 10, fundoY + 45, 0,
+			bonecoSelecionado->action);
 
 		al_draw_rectangle(bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, bonecoSelecionado->x + 16 + offsetX, bonecoSelecionado->y + 24 + offsetY,
 			RED, 2);
