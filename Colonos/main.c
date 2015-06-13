@@ -155,6 +155,9 @@ typedef struct character
 	struct character *next; //Apontador para o elemento seguinte
 	struct node * path; //Caminho que o boneco tem a percorrer
 	struct tarefa *tarefa; //Lista de tarefas a executar
+	int madeira; //Quantidade de madeira que o boneco transporta
+	int pedra; //Quantidade de pedra que o boneco transporta
+	int comida; //Quantidade de comida que o boneco transporta
 }* Character;
 
 //Descreve um edificio
@@ -321,11 +324,11 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 		break;
 	case 1:
 		//Apanhar Madeira
-		tarefa->tempo = 2000;
+		tarefa->tempo = 200;
 		break;
 	case 2:
 		//Descarregar madeira
-		tarefa->tempo = 500;
+		tarefa->tempo = 20;
 		break;
 	case 3:
 		//Apanhar pedra
@@ -1220,6 +1223,9 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->next = endereco;
 	boneco->path = NULL;
 	boneco->tarefa = NULL;
+	boneco->madeira = 0;
+	boneco->pedra = 0;
+	boneco->comida = 0;
 	return boneco;
 }
 
@@ -1396,9 +1402,12 @@ void UpdateCharacters(Character endereco){
 					//Apanhar madeira
 					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 						printf("Acabamos de apanhar madeira!\n");
+
+						endereco->madeira += 50;
+
 						//Mandar o boneco para o headquarters
 						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters() - offsetX, YHeadQuarters() - offsetY + 1);
-						
+
 						//Remover a tarefa atual
 						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
@@ -1414,38 +1423,45 @@ void UpdateCharacters(Character endereco){
 					break;
 				case 2:
 					//Descarregar madeira
-					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
-						printf("Acabamos de descarregar madeira!\n");
+					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
+						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+							printf("Acabamos de descarregar madeira!\n");
 
-						//Incrementar a quantidade de madeira
-						madeira += 50;
+							//Incrementar a quantidade de madeira
+							madeira += 50;
+							//Retirar a madeira que o boneco carregava
+							endereco->madeira -= 50;
 
-						int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
-						enderecoX = endereco->x;
-						enderecoY = endereco->y;
-						enderecoTarefaX = endereco->tarefa->x;
-						enderecoTarefaY = endereco->tarefa->y;
-						//Remover a tarefa atual
-						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+							int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
+							enderecoX = endereco->x;
+							enderecoY = endereco->y;
+							enderecoTarefaX = endereco->tarefa->x;
+							enderecoTarefaY = endereco->tarefa->y;
+							//Remover a tarefa atual
+							endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
-						if ((!WarehouseBuilt() && madeira < 500)
-							|| (WarehouseBuilt() && madeira < 2000)){
-							//Mandar o boneco para o local onde estava a apanhar madeira
-							endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX - offsetX, enderecoTarefaY - offsetY);
+							if (((!WarehouseBuilt() && madeira < 500)
+								|| (WarehouseBuilt() && madeira < 2000))){
+								//Mandar o boneco para o local onde estava a apanhar madeira
+								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX - offsetX, enderecoTarefaY - offsetY);
 
-							//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
-							printf("Vamos apanhar madeira!\n");
-							endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
+								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
+								printf("Vamos apanhar madeira!\n");
+								printf("X: %d\n", enderecoTarefaX);
+								printf("Y: %d\n", enderecoTarefaY);
+								endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
+							}
+							else{
+								printf("Armazens cheios de madeira!\n");
+							}
+
 						}
 						else{
-							printf("Armazens cheios de madeira!\n");
+							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+							endereco->tarefa->tempoExecucao++;
 						}
-						
 					}
-					else{
-						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
-						endereco->tarefa->tempoExecucao++;
-					}
+					
 					break;
 				default:
 					break;
@@ -1686,6 +1702,21 @@ void ProcessMouseClicks(Character bonequinhos){
 					continuar = false;
 					bonecoSelecionado = NULL;
 
+					break;
+				}
+
+				if (strcmp(aux->name, "Headquarters") == 0){
+
+					//Se tras coisas, descarregar
+					if (bonecoSelecionado->madeira > 0 || bonecoSelecionado->pedra > 0 || bonecoSelecionado->comida > 0){
+						//Clique em cima dos headquarters
+						bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1) + 1);
+
+					}
+
+					continuar = false;
+					bonecoSelecionado = NULL;
+					
 					break;
 				}
 			}
