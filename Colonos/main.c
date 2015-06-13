@@ -329,7 +329,7 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 		break;
 	case 1:
 		//Apanhar Madeira
-		tarefa->tempo = 2000;
+		tarefa->tempo = 500;
 		break;
 	case 2:
 		//Descarregar madeira
@@ -1426,7 +1426,7 @@ void UpdateCharacters(Character endereco){
 						endereco->madeira += 5;
 
 						//Mandar o boneco para o headquarters
-						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters() - offsetX, YHeadQuarters() - offsetY + 1);
+						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
 
 						//Remover a tarefa atual
 						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
@@ -1468,7 +1468,7 @@ void UpdateCharacters(Character endereco){
 							if (((!WarehouseBuilt() && madeira < 500)
 								|| (WarehouseBuilt() && madeira < 2000))){
 								//Mandar o boneco para o local onde estava a apanhar madeira
-								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX - offsetX, enderecoTarefaY - offsetY);
+								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX, enderecoTarefaY);
 
 								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
 								strcpy(endereco->action, "Walking to gather wood");
