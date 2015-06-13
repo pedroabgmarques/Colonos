@@ -105,8 +105,12 @@ int KBLimit = 5;
 int KBLimitCounter = 0;
 
 //Contadores de recursos
-int pedra = 100, madeira = 100, comida = 100;
+int pedra = 100, madeira = 50, comida = 100;
 int maxPedra = 300, maxMadeira = 300, maxComida = 300;
+
+//Textos de erro
+char textoErro[256] = "";
+int tempoTextoErro = 0;
 
 // *********************************************************************************************************** //
 // ESTRUTURAS DE DADOS //
@@ -1298,6 +1302,11 @@ int YHeadQuarters(){
 	}
 }
 
+void setTextoErro(char texto[256]){
+	strcpy(textoErro, texto);
+	tempoTextoErro = 200;
+}
+
 //Atualizar os bonequinhos
 void UpdateCharacters(Character endereco){
 
@@ -1410,7 +1419,7 @@ void UpdateCharacters(Character endereco){
 				case 1:
 					//Apanhar madeira
 					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
-						printf("Acabamos de apanhar madeira!\n");
+						//Acabamos de apanhar madeira!
 
 						strcpy(endereco->action, "Walking to unload wood");
 
@@ -1423,7 +1432,7 @@ void UpdateCharacters(Character endereco){
 						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
 						//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
-						printf("Vamos descarregar madeira!\n");
+						//Vamos descarregar madeira!
 						endereco->tarefa = InsertTarefa(endereco->tarefa, 2, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL);
 					
 					}
@@ -1441,7 +1450,7 @@ void UpdateCharacters(Character endereco){
 					//Descarregar madeira
 					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
-							printf("Acabamos de descarregar madeira!\n");
+							//Acabamos de descarregar madeira!
 
 							//Incrementar a quantidade de madeira
 							madeira += 50;
@@ -1463,13 +1472,10 @@ void UpdateCharacters(Character endereco){
 
 								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
 								strcpy(endereco->action, "Walking to gather wood");
-								printf("Vamos apanhar madeira!\n");
-								printf("X: %d\n", enderecoTarefaX);
-								printf("Y: %d\n", enderecoTarefaY);
 								endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
 							}
 							else{
-								printf("Armazens cheios de madeira!\n");
+								setTextoErro("Can't store/gather any more wood!");
 								strcpy(endereco->action, "Idle");
 							}
 
@@ -1787,27 +1793,37 @@ void ProcessMouseClicks(Character bonequinhos){
 		
 		if (bonecoSelecionado){
 			if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
-				printf("Clique em madeira!\n");
+				//Clique em madeira
 
-				if ((!WarehouseBuilt() && madeira < 500)
-					|| (WarehouseBuilt() && madeira < 2000)){
-					bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
-
-					//Encontrar um vizinho em que se possa andar
-					strcpy(bonecoSelecionado->action, "Walking to gather wood");
-					FazerBonecoAndarVizinho(xi, yi);
-					continuar = false;
+				if (bonecoSelecionado->madeira > 0 
+					|| bonecoSelecionado->pedra > 0
+					|| bonecoSelecionado->comida > 0){
+					//Este boneco já está a carregar com coisas, não pode apanhar mais antes de descarregar
+					setTextoErro("Must unload cargo first!");
 				}
 				else{
-					printf("Armazens cheios de madeira!\n");
+					//Está livre para trabalhar
+
+					if ((!WarehouseBuilt() && madeira < 500)
+						|| (WarehouseBuilt() && madeira < 2000)){
+						bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
+
+						//Encontrar um vizinho em que se possa andar
+						strcpy(bonecoSelecionado->action, "Walking to gather wood");
+						FazerBonecoAndarVizinho(xi, yi);
+						continuar = false;
+					}
+					else{
+						setTextoErro("Can't store/gather any more wood!");
+						strcpy(bonecoSelecionado->action, "Idle");
+					}
 				}
-				
 
 			}
 			if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
-				printf("Clique em pedra!\n");
+				//Clique em pedra
 
-				bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
+				//bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
 			}
 			
 		}
@@ -1830,6 +1846,14 @@ void DrawBonecoSelecionado(){
 		al_draw_text(textos,
 			WHITE, fundoX + 10, fundoY + 45, 0,
 			bonecoSelecionado->action);
+
+		//Desenhar erros / avisos
+		if (tempoTextoErro > 0){
+			al_draw_text(textos,
+				RED, DISPLAYWIDTH - 280, fundoY + 30, 0,
+				textoErro);
+			tempoTextoErro--;
+		}
 
 		al_draw_rectangle(bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, bonecoSelecionado->x + 16 + offsetX, bonecoSelecionado->y + 24 + offsetY,
 			RED, 2);
