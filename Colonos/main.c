@@ -158,7 +158,7 @@ typedef struct character
 	int madeira; //Quantidade de madeira que o boneco transporta
 	int pedra; //Quantidade de pedra que o boneco transporta
 	int comida; //Quantidade de comida que o boneco transporta
-	char * action; //Acção que o colono está a fazer num determinado momento
+	char action[256]; //Acção que o colono está a fazer num determinado momento
 }* Character;
 
 //Descreve um edificio
@@ -1227,7 +1227,7 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->madeira = 0;
 	boneco->pedra = 0;
 	boneco->comida = 0;
-	boneco->action = "Idle";
+	strcpy(boneco->action, "Idle");
 	return boneco;
 }
 
@@ -1307,8 +1307,8 @@ void UpdateCharacters(Character endereco){
 	{
 		if (endereco->path != NULL){
 			//Esta personagem tem caminho a percorrer
-			if (endereco->action == "Idle"){
-				endereco->action = "Walking";
+			if (strcmp(endereco->action, "Idle") == 0){
+				strcpy(endereco->action, "Walking");
 			}
 			
 
@@ -1379,7 +1379,9 @@ void UpdateCharacters(Character endereco){
 		}
 		else{
 			//Chegámos ao destino, atualizar tarefas
-			
+			if (strcmp(endereco->action, "Walking") == 0){
+				strcpy(endereco->action, "Idle");
+			}
 			if (endereco->tarefa != NULL){
 				switch (endereco->tarefa->type)
 				{
@@ -1410,7 +1412,7 @@ void UpdateCharacters(Character endereco){
 					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 						printf("Acabamos de apanhar madeira!\n");
 
-						endereco->action = "Walking to unload wood";
+						strcpy(endereco->action, "Walking to unload wood");
 
 						endereco->madeira += 50;
 
@@ -1427,7 +1429,11 @@ void UpdateCharacters(Character endereco){
 					}
 					else{
 						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
-						endereco->action = "Gathering wood";
+
+						char result[500];
+						sprintf(result, "%s%d%s", "Gathering wood (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+						strcpy(endereco->action, result);
+
 						endereco->tarefa->tempoExecucao++;
 					}
 					break;
@@ -1456,7 +1462,7 @@ void UpdateCharacters(Character endereco){
 								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX - offsetX, enderecoTarefaY - offsetY);
 
 								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
-								endereco->action = "Walking to gather wood";
+								strcpy(endereco->action, "Walking to gather wood");
 								printf("Vamos apanhar madeira!\n");
 								printf("X: %d\n", enderecoTarefaX);
 								printf("Y: %d\n", enderecoTarefaY);
@@ -1464,12 +1470,15 @@ void UpdateCharacters(Character endereco){
 							}
 							else{
 								printf("Armazens cheios de madeira!\n");
+								strcpy(endereco->action, "Idle");
 							}
 
 						}
 						else{
 							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
-							endereco->action = "Unloading wood";
+							char result[500];
+							sprintf(result, "%s%d%s", "Unloading wood (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+							strcpy(endereco->action, result);
 							endereco->tarefa->tempoExecucao++;
 						}
 					}
@@ -1722,7 +1731,7 @@ void ProcessMouseClicks(Character bonequinhos){
 					//Se tras coisas, descarregar
 					if (bonecoSelecionado->madeira > 0 || bonecoSelecionado->pedra > 0 || bonecoSelecionado->comida > 0){
 						//Clique em cima dos headquarters
-						bonecoSelecionado->action = "Walking to unload wood";
+						strcpy(bonecoSelecionado->action, "Walking to unload wood");
 						bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1) + 1);
 
 					}
@@ -1741,7 +1750,7 @@ void ProcessMouseClicks(Character bonequinhos){
 		if (continuar){
 			//Andar para uma localização no mapa
 			bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));	
-			bonecoSelecionado->action = "Walking";
+			strcpy(bonecoSelecionado->action, "Walking");
 			if (bonecoSelecionado->path != NULL){
 				bonecoSelecionado = NULL;
 			}
@@ -1785,7 +1794,7 @@ void ProcessMouseClicks(Character bonequinhos){
 					bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
 
 					//Encontrar um vizinho em que se possa andar
-					bonecoSelecionado->action = "Walking to gather wood";
+					strcpy(bonecoSelecionado->action, "Walking to gather wood");
 					FazerBonecoAndarVizinho(xi, yi);
 					continuar = false;
 				}
@@ -2031,7 +2040,7 @@ void LoadInitialState(){
 
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(5, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(10, 1), 2, 1);
 
 
 }
