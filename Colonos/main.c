@@ -1154,6 +1154,19 @@ Building FindBuilding(Building endereco, int i, int j){
 	return building;
 }
 
+//Verifica se existe armazem
+bool WarehouseBuilt(){
+	bool result = false;
+	for (int i = 0; i < MAPWIDTH; i++){
+		for (int j = 0; j < MAPHEIGHT; j++){
+			if (mapDef[i][j][0] == 43){
+				result = true;
+			}
+		}
+	}
+	return result;
+}
+
 //Desenhar o mapa
 void DrawMap(){
 	for (int i = 0; i < MAPWIDTH; i++){
@@ -1407,19 +1420,26 @@ void UpdateCharacters(Character endereco){
 						//Incrementar a quantidade de madeira
 						madeira += 50;
 
-						//Mandar o boneco para o local onde estava a apanhar madeira
-						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), endereco->tarefa->x - offsetX, endereco->tarefa->y - offsetY);
-
-						int enderecoX, enderecoY;
-						enderecoX = endereco->tarefa->x;
-						enderecoY = endereco->tarefa->y;
+						int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
+						enderecoX = endereco->x;
+						enderecoY = endereco->y;
+						enderecoTarefaX = endereco->tarefa->x;
+						enderecoTarefaY = endereco->tarefa->y;
 						//Remover a tarefa atual
 						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
-						//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
-						printf("Vamos apanhar madeira!\n");
-						endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoX, enderecoY, NULL);
+						if ((!WarehouseBuilt() && madeira < 500)
+							|| (WarehouseBuilt() && madeira < 2000)){
+							//Mandar o boneco para o local onde estava a apanhar madeira
+							endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX - offsetX, enderecoTarefaY - offsetY);
 
+							//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
+							printf("Vamos apanhar madeira!\n");
+							endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
+						}
+						else{
+							printf("Armazens cheios de madeira!\n");
+						}
 						
 					}
 					else{
@@ -1706,7 +1726,7 @@ void ProcessMouseClicks(Character bonequinhos){
 		aux = aux->next;
 	}
 
-	//Verificar clique em cima de pedra
+	//Verificar clique em cima de pedra ou madeira
 	if (continuar){
 		int xi = PixelToWorld((x / TILEWIDTH)  * TILEWIDTH, 0);
 		int yi = PixelToWorld((y / TILEHEIGHT)  * TILEHEIGHT, 1);
@@ -1716,7 +1736,18 @@ void ProcessMouseClicks(Character bonequinhos){
 			if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
 				printf("Clique em madeira!\n");
 
-				bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
+				if ((!WarehouseBuilt() && madeira < 500)
+					|| (WarehouseBuilt() && madeira < 2000)){
+					bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
+
+					//Encontrar um vizinho em que se possa andar
+					FazerBonecoAndarVizinho(xi, yi);
+					continuar = false;
+				}
+				else{
+					printf("Armazens cheios de madeira!\n");
+				}
+				
 
 			}
 			if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
@@ -1724,9 +1755,7 @@ void ProcessMouseClicks(Character bonequinhos){
 
 				bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
 			}
-			//Encontrar um vizinho em que se possa andar
-			FazerBonecoAndarVizinho(xi, yi);
-			continuar = false;
+			
 		}
 	}
 }
