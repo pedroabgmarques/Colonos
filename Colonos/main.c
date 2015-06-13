@@ -1423,7 +1423,7 @@ void UpdateCharacters(Character endereco){
 
 						strcpy(endereco->action, "Walking to unload wood");
 
-						endereco->madeira += 50;
+						endereco->madeira += 5;
 
 						//Mandar o boneco para o headquarters
 						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters() - offsetX, YHeadQuarters() - offsetY + 1);
@@ -1453,9 +1453,9 @@ void UpdateCharacters(Character endereco){
 							//Acabamos de descarregar madeira!
 
 							//Incrementar a quantidade de madeira
-							madeira += 50;
+							madeira += endereco->madeira;
 							//Retirar a madeira que o boneco carregava
-							endereco->madeira -= 50;
+							endereco->madeira = 0;
 
 							int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
 							enderecoX = endereco->x;
@@ -1668,7 +1668,8 @@ void DrawBuildingHover(Building edificios){
 }
 
 //Faz o boneco andar para um vizinho de determinadas coordenadas
-void FazerBonecoAndarVizinho(int xi, int yi){
+bool FazerBonecoAndarVizinho(int xi, int yi){
+	bool result = false;
 	if (mapDef[yi][xi + 1][1] == 1){
 		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi + 1 - offsetX, yi - offsetY);
 	}
@@ -1682,8 +1683,9 @@ void FazerBonecoAndarVizinho(int xi, int yi){
 		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - offsetX, yi - 1 - offsetY);
 	}
 	if (bonecoSelecionado->path != NULL){
-		bonecoSelecionado = NULL;
+		result = true;
 	}
+	return result;
 }
 
 void ProcessMouseClicks(Character bonequinhos){
@@ -1792,40 +1794,44 @@ void ProcessMouseClicks(Character bonequinhos){
 		
 		
 		if (bonecoSelecionado){
-			if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
-				//Clique em madeira
-
-				if (bonecoSelecionado->madeira > 0 
-					|| bonecoSelecionado->pedra > 0
-					|| bonecoSelecionado->comida > 0){
-					//Este boneco já está a carregar com coisas, não pode apanhar mais antes de descarregar
-					setTextoErro("Must unload cargo first!");
-				}
-				else{
-					//Está livre para trabalhar
+			if (bonecoSelecionado->madeira > 0
+				|| bonecoSelecionado->pedra > 0
+				|| bonecoSelecionado->comida > 0){
+				//Este boneco já está a carregar com coisas, não pode apanhar mais antes de descarregar
+				setTextoErro("Must unload cargo first!");
+			}
+			else{
+				//Está livre para trabalhar
+				if (mapDef[yi][xi][0] > 1 && mapDef[yi][xi][0] < 9){
+					//Clique em madeira
 
 					if ((!WarehouseBuilt() && madeira < 500)
 						|| (WarehouseBuilt() && madeira < 2000)){
-						bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
-
+						
 						//Encontrar um vizinho em que se possa andar
-						strcpy(bonecoSelecionado->action, "Walking to gather wood");
-						FazerBonecoAndarVizinho(xi, yi);
-						continuar = false;
+						if (FazerBonecoAndarVizinho(xi, yi)){
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
+							strcpy(bonecoSelecionado->action, "Walking to gather wood");
+							continuar = false;
+							bonecoSelecionado = NULL;
+						}
+						else{
+							setTextoErro("Can't reach resource!");
+						}
+						
 					}
 					else{
 						setTextoErro("Can't store/gather any more wood!");
 						strcpy(bonecoSelecionado->action, "Idle");
 					}
+
 				}
+				if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
+					//Clique em pedra
 
+					//bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
+				}
 			}
-			if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
-				//Clique em pedra
-
-				//bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
-			}
-			
 		}
 	}
 }
