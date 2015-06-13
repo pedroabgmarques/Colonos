@@ -1671,16 +1671,16 @@ void DrawBuildingHover(Building edificios){
 bool FazerBonecoAndarVizinho(int xi, int yi){
 	bool result = false;
 	if (mapDef[yi][xi + 1][1] == 1){
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi + 1 - offsetX, yi - offsetY);
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi + 1, yi);
 	}
 	if (mapDef[yi][xi - 1][1] == 1 && bonecoSelecionado->path == NULL){
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - 1 - offsetX, yi - offsetY);
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - 1, yi);
 	}
 	if (mapDef[yi + 1][xi][1] == 1 && bonecoSelecionado->path == NULL){
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - offsetX, yi + 1 - offsetY);
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi, yi + 1);
 	}
 	if (mapDef[yi - 1][xi][1] == 1 && bonecoSelecionado->path == NULL){
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - offsetX, yi - 1 - offsetY);
+		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi, yi - 1);
 	}
 	if (bonecoSelecionado->path != NULL){
 		result = true;
@@ -1789,9 +1789,11 @@ void ProcessMouseClicks(Character bonequinhos){
 
 	//Verificar clique em cima de pedra ou madeira
 	if (continuar){
-		int xi = PixelToWorld((x / TILEWIDTH)  * TILEWIDTH, 0);
-		int yi = PixelToWorld((y / TILEHEIGHT)  * TILEHEIGHT, 1);
-		
+		int xi = PixelToWorld((x / TILEWIDTH) * TILEWIDTH - offsetX, 0);
+		int yi = PixelToWorld((y / TILEHEIGHT) * TILEHEIGHT - offsetY, 1);
+
+		printf("xi: %d\n", xi);
+		printf("yi: %d\n", yi);
 		
 		if (bonecoSelecionado){
 			if (bonecoSelecionado->madeira > 0
