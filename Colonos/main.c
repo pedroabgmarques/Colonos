@@ -1383,15 +1383,47 @@ void UpdateCharacters(Character endereco){
 					//Apanhar madeira
 					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 						printf("Acabamos de apanhar madeira!\n");
-						//Remover a tarefa atual
-						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 						//Mandar o boneco para o headquarters
 						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters() - offsetX, YHeadQuarters() - offsetY + 1);
+						
+						//Remover a tarefa atual
+						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
 						//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
+						printf("Vamos descarregar madeira!\n");
 						endereco->tarefa = InsertTarefa(endereco->tarefa, 2, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL);
+					
 					}
 					else{
-						printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+						endereco->tarefa->tempoExecucao++;
+					}
+					break;
+				case 2:
+					//Descarregar madeira
+					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+						printf("Acabamos de descarregar madeira!\n");
+
+						//Incrementar a quantidade de madeira
+						madeira += 50;
+
+						//Mandar o boneco para o local onde estava a apanhar madeira
+						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), endereco->tarefa->x - offsetX, endereco->tarefa->y - offsetY);
+
+						int enderecoX, enderecoY;
+						enderecoX = endereco->tarefa->x;
+						enderecoY = endereco->tarefa->y;
+						//Remover a tarefa atual
+						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+						//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
+						printf("Vamos apanhar madeira!\n");
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoX, enderecoY, NULL);
+
+						
+					}
+					else{
+						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
 						endereco->tarefa->tempoExecucao++;
 					}
 					break;
