@@ -337,11 +337,11 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 		break;
 	case 3:
 		//Apanhar pedra
-		tarefa->tempo = 10000;
+		tarefa->tempo = 1000;
 		break;
 	case 4:
 		//Descarregar pedra
-		tarefa->tempo = 1000;
+		tarefa->tempo = 500;
 		break;
 	case 5:
 		//Apanhar peixe
@@ -1490,9 +1490,84 @@ void UpdateCharacters(Character endereco){
 					}
 					
 					break;
+				case 3:
+					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+						//Acabamos de apanhar pedra!
+
+						strcpy(endereco->action, "Walking to unload stone");
+
+						endereco->pedra += 5;
+
+						//Mandar o boneco para o headquarters
+						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
+
+						//Remover a tarefa atual
+						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+						//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
+						//Vamos descarregar pedra!
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 4, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL);
+
+					}
+					else{
+						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+
+						char result[500];
+						sprintf(result, "%s%d%s", "Gathering stone (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+						strcpy(endereco->action, result);
+
+						endereco->tarefa->tempoExecucao++;
+						
+					}
+					break;
+				case 4:
+					//Descarregar pedra
+					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
+						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+							//Acabamos de descarregar pedra!
+
+							//Incrementar a quantidade de pedra
+							pedra += endereco->pedra;
+							//Retirar a madeira que o boneco carregava
+							endereco->pedra = 0;
+
+							int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
+							enderecoX = endereco->x;
+							enderecoY = endereco->y;
+							enderecoTarefaX = endereco->tarefa->x;
+							enderecoTarefaY = endereco->tarefa->y;
+							//Remover a tarefa atual
+							endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+							if (((!WarehouseBuilt() && madeira < 500)
+								|| (WarehouseBuilt() && madeira < 2000))){
+								//Mandar o boneco para o local onde estava a apanhar madeira
+								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX, enderecoTarefaY);
+
+								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
+								strcpy(endereco->action, "Walking to gather stone");
+								endereco->tarefa = InsertTarefa(endereco->tarefa, 3, enderecoTarefaX, enderecoTarefaY, NULL);
+							}
+							else{
+								setTextoErro("Can't store/gather any more stone!");
+								strcpy(endereco->action, "Idle");
+							}
+
+						}
+						else{
+							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+							char result[500];
+							sprintf(result, "%s%d%s", "Unloading stone (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+							strcpy(endereco->action, result);
+							endereco->tarefa->tempoExecucao++;
+						}
+					}
+
+					break;
 				default:
 					break;
 				}
+				
 			}
 		}
 
@@ -1830,13 +1905,33 @@ void ProcessMouseClicks(Character bonequinhos){
 				}
 				if (mapDef[yi][xi][0] >= 9 && mapDef[yi][xi][0] < 12){
 					//Clique em pedra
+					if ((!WarehouseBuilt() && pedra < 500)
+						|| (WarehouseBuilt() && pedra < 2000)){
 
+						//Encontrar um vizinho em que se possa andar
+						if (FazerBonecoAndarVizinho(xi, yi)){
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
+							strcpy(bonecoSelecionado->action, "Walking to gather stone");
+							continuar = false;
+							bonecoSelecionado = NULL;
+						}
+						else{
+							setTextoErro("Can't reach resource!");
+						}
+
+					}
+					else{
+						setTextoErro("Can't store/gather any more stone!");
+						strcpy(bonecoSelecionado->action, "Idle");
+					}
+
+				}
 					//bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
 				}
 			}
 		}
 	}
-}
+
 
 //Desenha o boneco selecionado e a tile que está hovered
 void DrawBonecoSelecionado(){
