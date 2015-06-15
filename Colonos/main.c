@@ -127,6 +127,21 @@ typedef struct farm
 	struct farm *next; //Apontador para o elemento seguinte
 }* Farm;
 
+//Descreve uma floresta (madeira)
+typedef struct forest
+{
+	int type; //Sprite do estado inicial
+	int originalType; //Usado para guardar o tipo original, necessário aquando da regeneração
+	int i, j; //Posição da floresta no mapa
+	int quantity; //Quantidade atual de madeira que esta floresta possui
+	int originalQuantity; //Quantidade inicial de madeira que esta floresta possui
+	int phase; //Fase em que a floresta se encontra (arvores / troncos cortados)
+	int minTimer; //Tempo necessário para a regeneração da floresta
+	int timer; //Contador de tempo decorrido
+	char * name; //Nome descritivo do tipo de floresta
+	struct forest * next; //Apontador para o elemento seguinte
+}* Forest;
+
 //Descreve uma tarefa a executar por um colono
 typedef struct tarefa
 {
@@ -222,13 +237,13 @@ int mapDef[MAPWIDTH][MAPHEIGHT][3] =
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
-	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 3, 1, 0 }, { 3, 1, 0 }, { 6, 1, 0 }, { 5, 1, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
-	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 4, 1, 0 }, { 2, 1, 0 }, { 7, 1, 0 }, { 4, 1, 0 }, { 2, 1, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
-	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 2, 1, 0 }, { 5, 1, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 7, 1, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
-	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 3, 1, 0 }, { 7, 1, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 8, 1, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
-	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 6, 1, 0 }, { 1, 1, 1 }, { 0, 0, 0 }, { 0, 0, 0 }, { 6, 1, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
-	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 8, 1, 0 }, { 2, 1, 0 }, { 3, 1, 0 }, { 4, 1, 0 }, { 5, 1, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
-	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 12, 1, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
+	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
+	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
+	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
+	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
+	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 0, 0, 0 }, { 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
+	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
+	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
 	{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } },
@@ -258,6 +273,9 @@ Character bonequinhos = NULL;
 
 //Lista ligada de casas vazia
 Building edificios = NULL;
+
+//Lista ligada de florestas vazia
+Forest florestas = NULL;
 
 //Lista ligada de opcoes disponiveis
 Opcao opcoes = NULL;
@@ -1114,6 +1132,101 @@ Farm InsertFarm(Farm endereco, int j, int i, int type){
 	return farm;
 }
 
+//Inserir floresta
+Forest InsertForest(Forest endereco, int j, int i, int type){
+	Forest forest = (Forest)malloc(sizeof(struct forest));
+	switch (type)
+	{
+	case 2:
+		forest->minTimer = 3000;
+		forest->quantity = 30;
+		forest->name = _strdup("Forest");
+		break;
+	case 3:
+		forest->minTimer = 3000;
+		forest->quantity = 35;
+		forest->name = _strdup("Forest");
+		break;
+	case 4:
+		forest->minTimer = 3000;
+		forest->quantity = 30;
+		forest->name = _strdup("Forest");
+		break;
+	case 5:
+		forest->minTimer = 3000;
+		forest->quantity = 30;
+		forest->name = _strdup("Forest");
+		break;
+	case 6:
+		forest->minTimer = 3000;
+		forest->quantity = 30;
+		forest->name = _strdup("Forest");
+		break;
+	case 7:
+		forest->minTimer = 3000;
+		forest->quantity = 30;
+		forest->name = _strdup("Forest");
+		break;
+	case 8:
+		forest->minTimer = 3000;
+		forest->quantity = 30;
+		forest->name = _strdup("Forest");
+		break;
+	case 12:
+		forest->minTimer = 3000;
+		forest->quantity = 30;
+		forest->name = _strdup("Chopped trees");
+		break;
+	default:
+		forest->minTimer = 3000;
+		forest->quantity = 30;
+		forest->name = _strdup("Forest");
+		break;
+	}
+
+	forest->originalQuantity = forest->quantity;
+	forest->type = type;
+	forest->originalType = type;
+	forest->i = i;
+	forest->j = j;
+	forest->phase = 0;
+	forest->timer = 0;
+	forest->next = endereco;
+	mapDef[i][j][0] = type;
+	mapDef[i][j][1] = 0; // Characters can't walk over forests 
+	mapDef[i][j][2] = 0; // Can't build over farms
+	return forest;
+}
+
+void UpdateForests(Forest endereco){
+	while (endereco != NULL){
+
+		//Verificar se ainda tem madeira
+		if (endereco->quantity <= 0){
+			//Já não tem madeira, mudar para chopped trees
+			endereco->type = 12;
+			mapDef[endereco->i][endereco->j][0] = endereco->type;
+			endereco->phase = 1;
+		}
+		
+		if (endereco->phase == 1){
+			endereco->timer++;
+			//passar fase?
+			if (endereco->timer > endereco->minTimer){
+				//Passou tempo suficiente, regenerar
+				endereco->phase = 0;
+				endereco->timer = 0;
+				//alterar o tipo de sprite no mapa
+				mapDef[endereco->i][endereco->j][0] = endereco->originalType;
+				endereco->type = endereco->originalType;
+				endereco->quantity = endereco->originalQuantity;
+			}
+		}
+		
+		endereco = endereco->next;
+	}
+}
+
 //Atualizar quintas
 void UpdateFarms(Farm endereco){
 	while (endereco != NULL){
@@ -1160,6 +1273,18 @@ Building FindBuilding(Building endereco, int i, int j){
 		endereco = endereco->next;
 	}
 	return building;
+}
+
+//Encontrar floresta numa determinada posicao
+Forest FindForest(Forest endereco, int i, int j){
+	Forest forest = NULL;
+	while (endereco != NULL){
+		if (endereco->i == j && endereco->j == i){
+			forest = endereco;
+		}
+		endereco = endereco->next;
+	}
+	return forest;
 }
 
 //Verifica se existe armazem
@@ -1302,6 +1427,27 @@ int YHeadQuarters(){
 	}
 }
 
+//Faz o boneco andar para um vizinho de determinadas coordenadas
+bool FazerBonecoAndarVizinho(Character boneco, int xi, int yi){
+	bool result = false;
+	if (mapDef[yi][xi + 1][1] == 1){
+		boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), xi + 1, yi);
+	}
+	if (mapDef[yi][xi - 1][1] == 1 && boneco->path == NULL){
+		boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), xi - 1, yi);
+	}
+	if (mapDef[yi + 1][xi][1] == 1 && boneco->path == NULL){
+		boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), xi, yi + 1);
+	}
+	if (mapDef[yi - 1][xi][1] == 1 && boneco->path == NULL){
+		boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), xi, yi - 1);
+	}
+	if (boneco->path != NULL){
+		result = true;
+	}
+	return result;
+}
+
 void setTextoErro(char texto[256]){
 	strcpy(textoErro, texto);
 	tempoTextoErro = 200;
@@ -1418,33 +1564,57 @@ void UpdateCharacters(Character endereco){
 					break;
 				case 1:
 					//Apanhar madeira
-					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
-						//Acabamos de apanhar madeira!
 
-						strcpy(endereco->action, "Walking to unload wood");
+					//Verificar se o recurso ainda existe
+					if (FindForest(florestas, endereco->tarefa->x, endereco->tarefa->y)->phase == 0)
+					{
+						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+							//Acabamos de apanhar madeira!
 
-						endereco->madeira += 5;
+							strcpy(endereco->action, "Walking to unload wood");
 
-						//Mandar o boneco para o headquarters
-						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
+							//Colocar madeira no boneco e retirá-la da floresta
+							endereco->madeira += 5;
+							Forest forest = FindForest(florestas, endereco->tarefa->x, endereco->tarefa->y);
+							forest->quantity -= 5;
 
-						//Remover a tarefa atual
-						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+							//Mandar o boneco para o headquarters
+							endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
 
-						//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
-						//Vamos descarregar madeira!
-						endereco->tarefa = InsertTarefa(endereco->tarefa, 2, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL);
-					
+							int enderecoTarefaX, enderecoTarefaY;
+							enderecoTarefaX = endereco->tarefa->x;
+							enderecoTarefaY = endereco->tarefa->y;
+
+							//Remover a tarefa atual
+							endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+							//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
+							//Vamos descarregar madeira!
+							endereco->tarefa = InsertTarefa(endereco->tarefa, 2, enderecoTarefaX, enderecoTarefaY, NULL);
+
+							printf("Inserida tarefa para descarregar madeira\n");
+							printf("x: %d\n", enderecoTarefaX);
+							printf("y: %d\n", enderecoTarefaY);
+							printf("\n\n");
+
+						}
+						else{
+							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+
+							char result[500];
+							sprintf(result, "%s%d%s", "Gathering wood (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+							strcpy(endereco->action, result);
+
+							endereco->tarefa->tempoExecucao++;
+						}
 					}
 					else{
-						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
-
-						char result[500];
-						sprintf(result, "%s%d%s", "Gathering wood (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
-						strcpy(endereco->action, result);
-
-						endereco->tarefa->tempoExecucao++;
+						//A madeira que estavamos a cortar acabou!
+						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+						setTextoErro("Resource is depleted!");
+						strcpy(endereco->action, "Idle");
 					}
+					
 					break;
 				case 2:
 					//Descarregar madeira
@@ -1452,30 +1622,50 @@ void UpdateCharacters(Character endereco){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de descarregar madeira!
 
-							//Incrementar a quantidade de madeira
-							madeira += endereco->madeira;
-							//Retirar a madeira que o boneco carregava
-							endereco->madeira = 0;
+							//Verificar se o recurso ainda existe
+							if (FindForest(florestas, endereco->tarefa->x, endereco->tarefa->y)->phase == 0)
+							{
 
-							int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
-							enderecoX = endereco->x;
-							enderecoY = endereco->y;
-							enderecoTarefaX = endereco->tarefa->x;
-							enderecoTarefaY = endereco->tarefa->y;
-							//Remover a tarefa atual
-							endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+								//Incrementar a quantidade de madeira
+								madeira += endereco->madeira;
+								//Retirar a madeira que o boneco carregava
+								endereco->madeira = 0;
 
-							if (((!WarehouseBuilt() && madeira < 500)
-								|| (WarehouseBuilt() && madeira < 2000))){
-								//Mandar o boneco para o local onde estava a apanhar madeira
-								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX, enderecoTarefaY);
+								int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
+								enderecoX = endereco->x;
+								enderecoY = endereco->y;
+								enderecoTarefaX = endereco->tarefa->x;
+								enderecoTarefaY = endereco->tarefa->y;
+								//Remover a tarefa atual
+								endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
-								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
-								strcpy(endereco->action, "Walking to gather wood");
-								endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
+								if (((!WarehouseBuilt() && madeira < 500)
+									|| (WarehouseBuilt() && madeira < 2000))){
+
+									if (FazerBonecoAndarVizinho(endereco, enderecoTarefaX, enderecoTarefaY)){
+										endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
+
+										printf("Inserida tarefa para apanhar madeira\n");
+										printf("x: %d\n", enderecoTarefaX);
+										printf("y: %d\n", enderecoTarefaY);
+										printf("\n\n");
+
+										strcpy(endereco->action, "Walking to gather wood");
+									}
+									else{
+										setTextoErro("Can't reach resource!");
+									}
+
+								}
+								else{
+									setTextoErro("Can't store/gather any more wood!");
+									strcpy(endereco->action, "Idle");
+								}
 							}
 							else{
-								setTextoErro("Can't store/gather any more wood!");
+								//A madeira que estavamos a cortar acabou!
+								endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+								setTextoErro("Resource is depleted!");
 								strcpy(endereco->action, "Idle");
 							}
 
@@ -1742,27 +1932,6 @@ void DrawBuildingHover(Building edificios){
 	}
 }
 
-//Faz o boneco andar para um vizinho de determinadas coordenadas
-bool FazerBonecoAndarVizinho(int xi, int yi){
-	bool result = false;
-	if (mapDef[yi][xi + 1][1] == 1){
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi + 1, yi);
-	}
-	if (mapDef[yi][xi - 1][1] == 1 && bonecoSelecionado->path == NULL){
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi - 1, yi);
-	}
-	if (mapDef[yi + 1][xi][1] == 1 && bonecoSelecionado->path == NULL){
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi, yi + 1);
-	}
-	if (mapDef[yi - 1][xi][1] == 1 && bonecoSelecionado->path == NULL){
-		bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), xi, yi - 1);
-	}
-	if (bonecoSelecionado->path != NULL){
-		result = true;
-	}
-	return result;
-}
-
 void ProcessMouseClicks(Character bonequinhos){
 	x = mouseState.x;
 	y = mouseState.y;
@@ -1866,9 +2035,6 @@ void ProcessMouseClicks(Character bonequinhos){
 	if (continuar){
 		int xi = PixelToWorld((x / TILEWIDTH) * TILEWIDTH - offsetX, 0);
 		int yi = PixelToWorld((y / TILEHEIGHT) * TILEHEIGHT - offsetY, 1);
-
-		printf("xi: %d\n", xi);
-		printf("yi: %d\n", yi);
 		
 		if (bonecoSelecionado){
 			if (bonecoSelecionado->madeira > 0
@@ -1886,8 +2052,14 @@ void ProcessMouseClicks(Character bonequinhos){
 						|| (WarehouseBuilt() && madeira < 2000)){
 						
 						//Encontrar um vizinho em que se possa andar
-						if (FazerBonecoAndarVizinho(xi, yi)){
+						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
+
+							printf("Inserida tarefa para apanhar madeira\n");
+							printf("x: %d\n", xi);
+							printf("y: %d\n", yi);
+							printf("\n\n");
+
 							strcpy(bonecoSelecionado->action, "Walking to gather wood");
 							continuar = false;
 							bonecoSelecionado = NULL;
@@ -1909,7 +2081,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						|| (WarehouseBuilt() && pedra < 2000)){
 
 						//Encontrar um vizinho em que se possa andar
-						if (FazerBonecoAndarVizinho(xi, yi)){
+						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
 							strcpy(bonecoSelecionado->action, "Walking to gather stone");
 							continuar = false;
@@ -2165,9 +2337,14 @@ void LoadInitialState(){
 	/*quintas = InsertFarm(quintas, 5, 9, 17);
 	quintas = InsertFarm(quintas, 6, 9, 18);*/
 
+	//Florestas
+	florestas = InsertForest(florestas, 7, 6, 2);
+
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
 	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(10, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(12, 0), WorldToPixel(5, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(15, 0), WorldToPixel(7, 1), 2, 1);
 
 
 }
@@ -2241,6 +2418,8 @@ void Update(){
 	UpdateCharacters(bonequinhos);
 
 	UpdateBuildings(edificios);
+
+	UpdateForests(florestas);
 
 	UpdateMap();
 }
