@@ -1732,8 +1732,8 @@ void UpdateCharacters(Character endereco){
 							//Remover a tarefa atual
 							endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
-							if (((!WarehouseBuilt() && madeira < 500)
-								|| (WarehouseBuilt() && madeira < 2000))){
+							if (((!WarehouseBuilt() && pedra < 500)
+								|| (WarehouseBuilt() && pedra < 2000))){
 								//Mandar o boneco para o local onde estava a apanhar madeira
 								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX, enderecoTarefaY);
 
