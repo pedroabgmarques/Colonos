@@ -1138,47 +1138,47 @@ Forest InsertForest(Forest endereco, int j, int i, int type){
 	switch (type)
 	{
 	case 2:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 30;
 		forest->name = _strdup("Forest");
 		break;
 	case 3:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 35;
 		forest->name = _strdup("Forest");
 		break;
 	case 4:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 30;
 		forest->name = _strdup("Forest");
 		break;
 	case 5:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 30;
 		forest->name = _strdup("Forest");
 		break;
 	case 6:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 30;
 		forest->name = _strdup("Forest");
 		break;
 	case 7:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 30;
 		forest->name = _strdup("Forest");
 		break;
 	case 8:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 30;
 		forest->name = _strdup("Forest");
 		break;
 	case 12:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 30;
 		forest->name = _strdup("Chopped trees");
 		break;
 	default:
-		forest->minTimer = 3000;
+		forest->minTimer = 30000;
 		forest->quantity = 30;
 		forest->name = _strdup("Forest");
 		break;
@@ -1622,9 +1622,7 @@ void UpdateCharacters(Character endereco){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de descarregar madeira!
 
-							//Verificar se o recurso ainda existe
-							if (FindForest(florestas, endereco->tarefa->x, endereco->tarefa->y)->phase == 0)
-							{
+							
 
 								//Incrementar a quantidade de madeira
 								madeira += endereco->madeira;
@@ -1642,18 +1640,29 @@ void UpdateCharacters(Character endereco){
 								if (((!WarehouseBuilt() && madeira < 500)
 									|| (WarehouseBuilt() && madeira < 2000))){
 
-									if (FazerBonecoAndarVizinho(endereco, enderecoTarefaX, enderecoTarefaY)){
-										endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
+									//Verificar se o recurso ainda existe
+									if (FindForest(florestas, enderecoTarefaX, enderecoTarefaY)->phase == 0)
+									{
 
-										printf("Inserida tarefa para apanhar madeira\n");
-										printf("x: %d\n", enderecoTarefaX);
-										printf("y: %d\n", enderecoTarefaY);
-										printf("\n\n");
+										if (FazerBonecoAndarVizinho(endereco, enderecoTarefaX, enderecoTarefaY)){
+											endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
 
-										strcpy(endereco->action, "Walking to gather wood");
+											printf("Inserida tarefa para apanhar madeira\n");
+											printf("x: %d\n", enderecoTarefaX);
+											printf("y: %d\n", enderecoTarefaY);
+											printf("\n\n");
+
+											strcpy(endereco->action, "Walking to gather wood");
+										}
+										else{
+											setTextoErro("Can't reach resource!");
+										}
+
 									}
 									else{
-										setTextoErro("Can't reach resource!");
+										//A madeira que estavamos a cortar acabou!
+										setTextoErro("Resource is depleted!");
+										strcpy(endereco->action, "Idle");
 									}
 
 								}
@@ -1661,13 +1670,7 @@ void UpdateCharacters(Character endereco){
 									setTextoErro("Can't store/gather any more wood!");
 									strcpy(endereco->action, "Idle");
 								}
-							}
-							else{
-								//A madeira que estavamos a cortar acabou!
-								endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
-								setTextoErro("Resource is depleted!");
-								strcpy(endereco->action, "Idle");
-							}
+							
 
 						}
 						else{
@@ -2339,6 +2342,12 @@ void LoadInitialState(){
 
 	//Florestas
 	florestas = InsertForest(florestas, 7, 6, 2);
+	florestas = InsertForest(florestas, 8, 6, 3);
+	florestas = InsertForest(florestas, 5, 6, 4);
+	florestas = InsertForest(florestas, 9, 8, 5);
+	florestas = InsertForest(florestas, 10, 9, 6);
+	florestas = InsertForest(florestas, 10, 10, 7);
+	florestas = InsertForest(florestas, 5, 5, 8);
 
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
