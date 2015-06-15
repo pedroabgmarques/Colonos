@@ -2056,6 +2056,8 @@ void ProcessMouseClicks(Character bonequinhos){
 						
 						//Encontrar um vizinho em que se possa andar
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
+							//Limpar tarefas que tenha a criar uma nova TODO: free???
+							bonecoSelecionado->tarefa = NULL;
 							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
 
 							printf("Inserida tarefa para apanhar madeira\n");
@@ -2085,6 +2087,8 @@ void ProcessMouseClicks(Character bonequinhos){
 
 						//Encontrar um vizinho em que se possa andar
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
+							//Limpar tarefas que tenha a criar uma nova TODO: free???
+							bonecoSelecionado->tarefa = NULL;
 							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
 							strcpy(bonecoSelecionado->action, "Walking to gather stone");
 							continuar = false;
