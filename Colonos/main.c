@@ -1757,6 +1757,80 @@ void UpdateCharacters(Character endereco){
 					}
 
 					break;
+				case 5:
+					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+						//Acabamos de apanhar comida!
+
+						strcpy(endereco->action, "Walking to unload food");
+
+						endereco->comida += 5;
+
+						//Mandar o boneco para o headquarters
+						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
+
+						//Remover a tarefa atual
+						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+						//Inserir a tarefa de descarregar comida, guardando o x, y em que estavamos a apanhar
+						//Vamos descarregar comida!
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 6, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL);
+
+					}
+					else{
+						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+
+						char result[500];
+						sprintf(result, "%s%d%s", "Gathering food (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+						strcpy(endereco->action, result);
+
+						endereco->tarefa->tempoExecucao++;
+
+					}
+					break;
+				case 6:
+					//Descarregar comida
+					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
+						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+							//Acabamos de descarregar comida!
+
+							//Incrementar a quantidade de comida
+							comida += endereco->comida;
+							//Retirar a madeira que o boneco carregava
+							endereco->comida = 0;
+
+							int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
+							enderecoX = endereco->x;
+							enderecoY = endereco->y;
+							enderecoTarefaX = endereco->tarefa->x;
+							enderecoTarefaY = endereco->tarefa->y;
+							//Remover a tarefa atual
+							endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+							if (((!WarehouseBuilt() && comida < 500)
+								|| (WarehouseBuilt() && comida < 2000))){
+								//Mandar o boneco para o local onde estava a apanhar comida
+								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX, enderecoTarefaY);
+
+								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
+								strcpy(endereco->action, "Walking to gather comida");
+								endereco->tarefa = InsertTarefa(endereco->tarefa, 5, enderecoTarefaX, enderecoTarefaY, NULL);
+							}
+							else{
+								setTextoErro("Can't store/gather any more comida!");
+								strcpy(endereco->action, "Idle");
+							}
+
+						}
+						else{
+							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+							char result[500];
+							sprintf(result, "%s%d%s", "Unloading food (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+							strcpy(endereco->action, result);
+							endereco->tarefa->tempoExecucao++;
+						}
+					}
+
+					break;
 				default:
 					break;
 				}
@@ -2101,6 +2175,31 @@ void ProcessMouseClicks(Character bonequinhos){
 					}
 					else{
 						setTextoErro("Can't store/gather any more stone!");
+						strcpy(bonecoSelecionado->action, "Idle");
+					}
+
+				}
+				if (mapDef[yi][xi][0] == 0 /*&& mapDef[yi][xi][0] < 20*/){
+					//Clique em agua
+					if ((!WarehouseBuilt() && comida < 500)
+						|| (WarehouseBuilt() && comida < 2000)){
+
+						//Encontrar um vizinho em que se possa andar
+						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
+							//Limpar tarefas que tenha a criar uma nova TODO: free???
+							bonecoSelecionado->tarefa = NULL;
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
+							strcpy(bonecoSelecionado->action, "Walking to gather food");
+							continuar = false;
+							bonecoSelecionado = NULL;
+						}
+						else{
+							setTextoErro("Can't reach resource!");
+						}
+
+					}
+					else{
+						setTextoErro("Can't store/gather any more food!");
 						strcpy(bonecoSelecionado->action, "Idle");
 					}
 
