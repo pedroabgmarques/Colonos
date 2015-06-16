@@ -2340,18 +2340,24 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 void loadMap(int map[MAPWIDTH][MAPHEIGHT][3])
 {
 	data = fopen("data.txt", "r");
-	for (int i = 0; i < MAPWIDTH; i++)
+	if (data != NULL)
 	{
-		for (int j = 0; j < MAPHEIGHT; j++)
+		for (int i = 0; i < MAPWIDTH; i++)
 		{
-			for (int z = 0; z < 3; z++)
+			for (int j = 0; j < MAPHEIGHT; j++)
 			{
-				fscanf(data, "%d\n", &mapDef[i][j][z]);
+				for (int z = 0; z < 3; z++)
+				{
+					fscanf(data, "%d\n", &mapDef[i][j][z]);
+				}
+				//fscanf(data, "\n");
 			}
-			//fscanf(data, "\n");
 		}
+		fclose(data);
 	}
-	fclose(data);
+	else
+
+		return;
 }
 void UpdateInput(){
 
@@ -2642,9 +2648,14 @@ void Draw(){
 		DrawSaveUI();
 	}
 	//desenha UI de load quando o jogo começa
-	if (loadUIactive == 1)
+	data = fopen("data.txt", "r");
+	if (data != NULL)
 	{
-		DrawLoadUI();
+		if (loadUIactive == 1)
+		{
+			fclose(data);
+			DrawLoadUI();
+		}
 	}
 	al_flip_display();
 }
