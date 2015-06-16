@@ -2108,7 +2108,7 @@ void ProcessMouseClicks(Character bonequinhos){
 		aux = aux->next;
 	}
 
-	//Verificar clique em cima de pedra ou madeira
+	//Verificar clique em cima de pedra, madeira ou comida
 	if (continuar){
 		int xi = PixelToWorld((x / TILEWIDTH) * TILEWIDTH - offsetX, 0);
 		int yi = PixelToWorld((y / TILEHEIGHT) * TILEHEIGHT - offsetY, 1);
@@ -2179,7 +2179,7 @@ void ProcessMouseClicks(Character bonequinhos){
 					}
 
 				}
-				if (mapDef[yi][xi][0] == 0 /*&& mapDef[yi][xi][0] < 20*/){
+				if (mapDef[yi][xi][0] ==0 /*&& mapDef[yi][xi][0] < 20*/){
 					//Clique em agua
 					if ((!WarehouseBuilt() && comida < 500)
 						|| (WarehouseBuilt() && comida < 2000)){
@@ -2188,7 +2188,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
-							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 5, xi, yi, NULL);
 							strcpy(bonecoSelecionado->action, "Walking to gather food");
 							continuar = false;
 							bonecoSelecionado = NULL;
