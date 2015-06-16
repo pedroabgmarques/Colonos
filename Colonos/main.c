@@ -25,7 +25,8 @@ int mouseButtons;
 int exitGame = 0;
 const float FPS = 60;
 float x, y;
-
+FILE* data;
+int saveUIactive = 0;//0 - desativada, 1 - activo
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
 
@@ -2035,13 +2036,63 @@ void DrawFixedUI(){
 			str);
 	}
 }
+//Guardar estado actual do mapa
+void saveMap(int map[MAPWIDTH][MAPHEIGHT][3], FILE* data)
+{
+	
+	
+		data = fopen("data.txt", "w");
+		for (int i = 0; i < MAPWIDTH; i++)
+		{
+			for (int j = 0; j < MAPHEIGHT; j++)
+			{
+				
+				for (int z = 0; z < 3; z++)
+				{
+					fprintf(data, "%d", map[i][j][z]);
+				}
+			}
+		}
+		fclose(data);
+	
+}
 
+//Load do estado do mapa guardado
+void loadMap(int map[MAPWIDTH][MAPHEIGHT][3], FILE* data)
+{
+	data = fopen("data.txt", "r");
+	for (int i = 0; i < MAPWIDTH; i++)
+	{
+		for (int j = 0; j < MAPHEIGHT; j++)
+		{
+			fscanf(data, "%d", &map[i][j]);
+		}
+	}
+}
 void UpdateInput(){
 
 
 	al_get_keyboard_state(&state);
 	//Escape
 	if (al_key_down(&state, ALLEGRO_KEY_ESCAPE)){
+		
+			//al_draw_filled_rounded_rectangle(DISPLAYWIDTH - 300, 20, DISPLAYWIDTH - 10, 60, 25, 25, GREY);
+			////al_draw_filled_rounded_rectangle(0, 200, 10, 200, 25, 25, GREY);//460,20,20,60,10,10,red
+			//char str[100];
+			//sprintf(str, "Do you want to save your progress? [y]Yes, [n]No");
+			//al_draw_text(textos, WHITE, DISPLAYWIDTH - 430, 32, 0, str);
+			//Sleep(5000);
+		saveUIactive = 1;
+		//saveMap(mapDef[MAPWIDTH][MAPHEIGHT], data);
+		//exitGame = 1;
+	
+		//ShutDown();
+	
+	}
+
+	if (saveUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_Y))
+	{
+		saveMap(mapDef[MAPWIDTH][MAPHEIGHT][3], data);
 		exitGame = 1;
 		ShutDown();
 	}
@@ -2244,7 +2295,16 @@ void Update(){
 
 	UpdateMap();
 }
-
+//desenha ui do ecra de savegame
+void DrawSaveUI()
+{
+	al_draw_filled_rounded_rectangle(DISPLAYWIDTH - 800, 150, DISPLAYWIDTH - 200, 300, 10, 10, GREY);
+	////al_draw_filled_rounded_rectangle(0, 200, 10, 200, 25, 25, GREY);//460,20,20,60,10,10,red
+	char str[100];
+	sprintf(str, "Do you want to save your progress? [y]Yes, [n]No");
+	al_draw_text(textos, WHITE, DISPLAYWIDTH - 660, 210, 0, str);
+	//Sleep(5000);
+}
 void Draw(){
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 
@@ -2259,7 +2319,10 @@ void Draw(){
 	DrawBonecoSelecionado();
 
 	DrawFixedUI();
-
+	if (saveUIactive == 1)
+	{
+		DrawSaveUI();
+	}
 	al_flip_display();
 }
 
@@ -2271,7 +2334,7 @@ int main(){
 
 	//Load assets e estado inicial
 	Load();
-
+	//loadMap(mapDef, data);
 	//Gerar grafo de Pathfinding
 	UpdateSearchNodes();
 
@@ -2288,6 +2351,6 @@ int main(){
 			Draw();
 		}
 	}
-
+	
 	return 1;
 }
