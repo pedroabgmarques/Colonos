@@ -27,6 +27,7 @@ const float FPS = 60;
 float x, y;
 FILE* data;
 int saveUIactive = 0;//0 - desativada, 1 - activo
+int loadUIactive = 1;//0- desactivada, 1 - activo
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
 
@@ -2315,7 +2316,7 @@ void DrawFixedUI(){
 	}
 }
 //Guardar estado actual do mapa
-void saveMap(int map[MAPWIDTH][MAPHEIGHT][3], FILE* data)
+void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 {
 	
 	
@@ -2324,11 +2325,11 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3], FILE* data)
 		{
 			for (int j = 0; j < MAPHEIGHT; j++)
 			{
-				
 				for (int z = 0; z < 3; z++)
 				{
-					fprintf(data, "%d", map[i][j][z]);
+					fprintf(data, "%d\n", map[i][j][z]);
 				}
+				//fprintf(data,"\n");
 			}
 		}
 		fclose(data);
@@ -2336,16 +2337,21 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3], FILE* data)
 }
 
 //Load do estado do mapa guardado
-void loadMap(int map[MAPWIDTH][MAPHEIGHT][3], FILE* data)
+void loadMap(int map[MAPWIDTH][MAPHEIGHT][3])
 {
 	data = fopen("data.txt", "r");
 	for (int i = 0; i < MAPWIDTH; i++)
 	{
 		for (int j = 0; j < MAPHEIGHT; j++)
 		{
-			fscanf(data, "%d", &map[i][j]);
+			for (int z = 0; z < 3; z++)
+			{
+				fscanf(data, "%d\n", &mapDef[i][j][z]);
+			}
+			//fscanf(data, "\n");
 		}
 	}
+	fclose(data);
 }
 void UpdateInput(){
 
@@ -2367,14 +2373,25 @@ void UpdateInput(){
 		//ShutDown();
 	
 	}
-
+	//se pressionar mos "y" na UI de save game, guarda o map e sai
 	if (saveUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_Y))
 	{
-		saveMap(mapDef[MAPWIDTH][MAPHEIGHT][3], data);
+		saveUIactive = 0;
+		saveMap(mapDef);
 		exitGame = 1;
 		ShutDown();
 	}
-
+	//se pressionarmos "y" na UI de load game, faz load do mapa guardado
+	if (loadUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_Y))
+	{
+		loadUIactive = 0;
+		loadMap(mapDef);
+	}
+	if (loadUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_N))
+	{
+		
+	}
+	
 	if (KBLimitCounter > KBLimit){
 		//Right
 		if (al_key_down(&state, ALLEGRO_KEY_D)){
@@ -2591,10 +2608,19 @@ void DrawSaveUI()
 {
 	al_draw_filled_rounded_rectangle(DISPLAYWIDTH - 800, 150, DISPLAYWIDTH - 200, 300, 10, 10, GREY);
 	////al_draw_filled_rounded_rectangle(0, 200, 10, 200, 25, 25, GREY);//460,20,20,60,10,10,red
-	char str[100];
+	char str[1000];
 	sprintf(str, "Do you want to save your progress? [y]Yes, [n]No");
 	al_draw_text(textos, WHITE, DISPLAYWIDTH - 660, 210, 0, str);
 	//Sleep(5000);
+}
+//desenha UI do loadGame
+void DrawLoadUI()
+{
+	al_draw_filled_rounded_rectangle(DISPLAYWIDTH - 800, 150, DISPLAYWIDTH - 200, 300, 10, 10, GREY);
+	////al_draw_filled_rounded_rectangle(0, 200, 10, 200, 25, 25, GREY);//460,20,20,60,10,10,red
+	char str[1000];
+	sprintf(str, "Do you want to load the previous game? [y]Yes, [n]No");
+	al_draw_text(textos, WHITE, DISPLAYWIDTH - 660, 210, 0, str);
 }
 void Draw(){
 	al_clear_to_color(al_map_rgb(0, 0, 0));
@@ -2610,9 +2636,15 @@ void Draw(){
 	DrawBonecoSelecionado();
 
 	DrawFixedUI();
+	//desenha UI de save game se pressionarmos ESC
 	if (saveUIactive == 1)
 	{
 		DrawSaveUI();
+	}
+	//desenha UI de load quando o jogo começa
+	if (loadUIactive == 1)
+	{
+		DrawLoadUI();
 	}
 	al_flip_display();
 }
