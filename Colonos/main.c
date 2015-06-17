@@ -2318,27 +2318,31 @@ void DrawFixedUI(){
 //Guardar estado actual do mapa
 void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 {
-	
+	int i, j, z=0;
 	
 		data = fopen("data.txt", "w");
-		for (int i = 0; i < MAPWIDTH; i++)
+		for (i = 0; i < MAPWIDTH; i++)
 		{
-			for (int j = 0; j < MAPHEIGHT; j++)
+			for (j = 0; j < MAPHEIGHT; j++)
 			{
-				for (int z = 0; z < 3; z++)
+				for (z = 0; z < 3; z++)
 				{
 					fprintf(data, "%d\n", map[i][j][z]);
 				}
 				//fprintf(data,"\n");
 			}
 		}
+		fprintf(data, "%d\n", madeira);
+		fprintf(data, "%d\n", comida);
+		fprintf(data, "%d\n", pedra);
 		fclose(data);
 	
 }
 
 //Load do estado do mapa guardado
-void loadMap(int map[MAPWIDTH][MAPHEIGHT][3])
+void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 {
+	int z = 0;
 	data = fopen("data.txt", "r");
 	if (data != NULL)
 	{
@@ -2350,14 +2354,15 @@ void loadMap(int map[MAPWIDTH][MAPHEIGHT][3])
 				{
 					fscanf(data, "%d\n", &mapDef[i][j][z]);
 				}
-				//fscanf(data, "\n");
+				
 			}
 		}
+		fscanf(data, "%d\n", &madeira);
+		fscanf(data, "%d\n", &comida);
+		fscanf(data, "%d\n", &pedra);
 		fclose(data);
 	}
-	else
-
-		return;
+	
 }
 void UpdateInput(){
 
@@ -2366,22 +2371,27 @@ void UpdateInput(){
 	//Escape
 	if (al_key_down(&state, ALLEGRO_KEY_ESCAPE)){
 		
-			//al_draw_filled_rounded_rectangle(DISPLAYWIDTH - 300, 20, DISPLAYWIDTH - 10, 60, 25, 25, GREY);
-			////al_draw_filled_rounded_rectangle(0, 200, 10, 200, 25, 25, GREY);//460,20,20,60,10,10,red
-			//char str[100];
-			//sprintf(str, "Do you want to save your progress? [y]Yes, [n]No");
-			//al_draw_text(textos, WHITE, DISPLAYWIDTH - 430, 32, 0, str);
-			//Sleep(5000);
 		saveUIactive = 1;
-		//saveMap(mapDef[MAPWIDTH][MAPHEIGHT], data);
-		//exitGame = 1;
-	
-		//ShutDown();
-	
+			
+	}
+	if (al_key_down(&state, ALLEGRO_KEY_M))
+	{
+		for (int i = 0; i < MAPWIDTH; i++)
+		{
+			for (int j = 0; j < MAPHEIGHT; j++)
+			{
+				for (int z = 0; z < 3; z++)
+				{
+					printf("%d\t", mapDef[i][j][z]);
+				}
+				printf("\n");
+			}
+		}
 	}
 	//se pressionar mos "y" na UI de save game, guarda o map e sai
 	if (saveUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_Y))
 	{
+		
 		saveUIactive = 0;
 		saveMap(mapDef);
 		exitGame = 1;
@@ -2391,11 +2401,11 @@ void UpdateInput(){
 	if (loadUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_Y))
 	{
 		loadUIactive = 0;
-		loadMap(mapDef);
+		loadMap();
 	}
 	if (loadUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_N))
 	{
-		
+		loadUIactive = 0;
 	}
 	
 	if (KBLimitCounter > KBLimit){
@@ -2599,6 +2609,7 @@ void Load(){
 }
 
 void Update(){
+
 	UpdateFarms(quintas);
 
 	UpdateCharacters(bonequinhos);
@@ -2628,6 +2639,20 @@ void DrawLoadUI()
 	sprintf(str, "Do you want to load the previous game? [y]Yes, [n]No");
 	al_draw_text(textos, WHITE, DISPLAYWIDTH - 660, 210, 0, str);
 }
+//verificar se existe jogo guardado anteriormente
+void checkLoadedGame()
+{
+	//desenha UI de load quando o jogo começa
+	//data = fopen("data.txt", "r");
+	if (loadUIactive==1)
+	{
+		if (fopen("data.txt", "r") != NULL)
+		{
+			//fclose(data);
+			DrawLoadUI();
+		}
+	}
+}
 void Draw(){
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 
@@ -2647,16 +2672,7 @@ void Draw(){
 	{
 		DrawSaveUI();
 	}
-	//desenha UI de load quando o jogo começa
-	data = fopen("data.txt", "r");
-	if (data != NULL)
-	{
-		if (loadUIactive == 1)
-		{
-			fclose(data);
-			DrawLoadUI();
-		}
-	}
+	checkLoadedGame();
 	al_flip_display();
 }
 
@@ -2668,10 +2684,11 @@ int main(){
 
 	//Load assets e estado inicial
 	Load();
+	
 	//loadMap(mapDef, data);
 	//Gerar grafo de Pathfinding
 	UpdateSearchNodes();
-
+	
 	//GAME LOOP
 	while (!exitGame){
 
