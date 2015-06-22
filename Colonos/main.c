@@ -346,6 +346,9 @@ void ResetSearchNodes(){
 			node->distanceToTarget = 0;
 			node->parent = NULL;
 			node->contadorVizinhos = 0;
+			for (int i = 0; i < 4; i++){
+				node->vizinhos[0]->caminho = false;
+			}
 		}
 	}
 }
@@ -400,8 +403,20 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 		tarefa->tempo = 12000;
 		break;
 	case 10:
-		//Construir casa
-		tarefa->tempo = 3000;
+		//Construir casa 1
+		tarefa->tempo = 7000;
+		break;
+	case 11:
+		//Construir casa 2
+		tarefa->tempo = 7000;
+		break;
+	case 12:
+		//Construir casa 3
+		tarefa->tempo = 7000;
+		break;
+	case 13:
+		//Construir casa 4
+		tarefa->tempo = 7000;
 		break;
 	default:
 		break;
@@ -713,7 +728,6 @@ Node FindPath(int x1, int y1, int x2, int y2)
 	//          and G values in case they are still set from the last 
 	//          time we tried to find a path. 
 	/////////////////////////////////////////////////////////////////////
-	//UpdateSearchNodes();
 	UpdateSearchNodes();
 
 	// Store references to the start and end nodes for convenience.
@@ -1365,7 +1379,7 @@ void DrawNoWalkConstructionTiles(){
 			if (mapDef[j][i][2] == 0){
 				//Can't build on these tiles
 				al_draw_rectangle(i * TILEWIDTH + offsetX, j * TILEHEIGHT + offsetY, i * TILEWIDTH + TILEWIDTH + offsetX, j * TILEHEIGHT + TILEHEIGHT + offsetY,
-					RED, 1);
+					YELLOW, 1);
 			}
 			if (mapDef[j][i][1] == 0){
 				//Can't walk on these tiles
@@ -1487,6 +1501,36 @@ bool FazerBonecoAndarVizinho(Character boneco, int xi, int yi){
 void setTextoErro(char texto[256]){
 	strcpy(textoErro, texto);
 	tempoTextoErro = 200;
+}
+
+void BuildHouseTask(Character endereco, int house){
+	if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+		//Acabamos de construir uma casa!
+
+		strcpy(endereco->action, "Idle");
+
+		endereco->tarefaIniciada = false;
+		//Remover a tarefa atual
+		endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+	}
+	else{
+		//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+
+		if (!endereco->tarefaIniciada){
+			edificios = InsertBuilding(edificios, endereco->tarefa->x, endereco->tarefa->y, house);
+			madeira -= 100;
+			pedra -= 100;
+			endereco->tarefaIniciada = true;
+		}
+
+		char result[500];
+		sprintf(result, "%s%d%s", "Bulding House (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+		strcpy(endereco->action, result);
+
+		endereco->tarefa->tempoExecucao++;
+
+	}
 }
 
 //Atualizar os bonequinhos
@@ -1869,33 +1913,19 @@ void UpdateCharacters(Character endereco){
 					break;
 				case 10:
 					//Build House 1
-					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
-						//Acabamos de construir uma casa!
-
-						strcpy(endereco->action, "Idle");
-
-						endereco->tarefaIniciada = false;
-						//Remover a tarefa atual
-						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
-
-					}
-					else{
-						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
-
-						if (!endereco->tarefaIniciada){
-							edificios = InsertBuilding(edificios, endereco->tarefa->x, endereco->tarefa->y, 39);
-							madeira -= 100;
-							pedra -= 100;
-							endereco->tarefaIniciada = true;
-						}
-
-						char result[500];
-						sprintf(result, "%s%d%s", "Bulding House (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
-						strcpy(endereco->action, result);
-
-						endereco->tarefa->tempoExecucao++;
-
-					}
+					BuildHouseTask(endereco, 39);
+					break;
+				case 11:
+					//Build House 1
+					BuildHouseTask(endereco, 40);
+					break;
+				case 12:
+					//Build House 1
+					BuildHouseTask(endereco, 45);
+					break;
+				case 13:
+					//Build House 1
+					BuildHouseTask(endereco, 46);
 					break;
 				default:
 					break;
@@ -2075,6 +2105,28 @@ void DrawBuildingHover(Building edificios){
 	}
 }
 
+void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int tarefa){
+	//Construir uma casa
+	//Encontrar um vizinho em que se possa andar
+	if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
+		//Limpar tarefas que tenha a criar uma nova TODO: free???
+		bonecoSelecionado->tarefa = NULL;
+		bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi, NULL);
+
+		printf("Inserida tarefa para construir casa\n");
+		printf("x: %d\n", xi);
+		printf("y: %d\n", yi);
+		printf("\n\n");
+
+		strcpy(bonecoSelecionado->action, "Walking to build House");
+		bonecoSelecionado = NULL;
+		opcaoAtiva = NULL;
+	}
+	else{
+		setTextoErro("Can't reach space!");
+	}
+}
+
 void ProcessMouseClicks(Character bonequinhos){
 	x = mouseState.x;
 	y = mouseState.y;
@@ -2158,30 +2210,21 @@ void ProcessMouseClicks(Character bonequinhos){
 				switch (opcaoAtiva->tecla)
 				{
 				case '1':
-					//Construir a casa 1
-					//Encontrar um vizinho em que se possa andar
-					if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
-						//Limpar tarefas que tenha a criar uma nova TODO: free???
-						bonecoSelecionado->tarefa = NULL;
-						bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 10, xi, yi, NULL);
-
-						printf("Inserida tarefa para construir casa\n");
-						printf("x: %d\n", xi);
-						printf("y: %d\n", yi);
-						printf("\n\n");
-
-						strcpy(bonecoSelecionado->action, "Walking to build House 1");
-						continuar = false;
-						bonecoSelecionado = NULL;
-						opcaoAtiva = NULL;
-					}
-					else{
-						setTextoErro("Can't reach space!");
-					}
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 10);
+					break;
+				case '2':
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 11);
+					break;
+				case '3':
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 12);
+					break;
+				case '4':
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 13);
 					break;
 				default:
 					break;
 				}
+				continuar = false;
 			}
 			else{
 				//Não há nenhuma opção seleccionada, vamos simplemente andar para uma posição no mapa
@@ -2745,6 +2788,27 @@ void UpdateInput(){
 				//Casa 1
 				if (al_key_down(&state, ALLEGRO_KEY_1)){
 					opcaoAtiva = InsertOption(opcaoAtiva, '1', "build House 1");
+					opcoes = NULL;
+				}
+				break;
+			case '2':
+				//Casa 2
+				if (al_key_down(&state, ALLEGRO_KEY_2)){
+					opcaoAtiva = InsertOption(opcaoAtiva, '2', "build House 2");
+					opcoes = NULL;
+				}
+				break;
+			case '3':
+				//Casa 3
+				if (al_key_down(&state, ALLEGRO_KEY_3)){
+					opcaoAtiva = InsertOption(opcaoAtiva, '3', "build House 3");
+					opcoes = NULL;
+				}
+				break;
+			case '4':
+				//Casa 4
+				if (al_key_down(&state, ALLEGRO_KEY_4)){
+					opcaoAtiva = InsertOption(opcaoAtiva, '4', "build House 4");
 					opcoes = NULL;
 				}
 				break;
