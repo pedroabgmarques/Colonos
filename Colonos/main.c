@@ -28,6 +28,8 @@ float x, y;
 FILE* data;
 int saveUIactive = 0;//0 - desativada, 1 - activo
 int loadUIactive = 1;//0- desactivada, 1 - activo
+int quantidadeEdificios;
+int quantidadeColonos;
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
 
@@ -2315,11 +2317,37 @@ void DrawFixedUI(){
 			str);
 	}
 }
+//contar numero de edificios
+int contarEdificios()
+{
+	int numeroEdificios=0;
+	
+	Building aux=edificios;
+	while (aux != NULL)
+	{
+		numeroEdificios++;
+		aux = aux->next;
+	}
+	return (numeroEdificios-3);
+}
+//contar numero de colonos
+int contarColonos()
+{
+	int numColonos = 0;
+
+	Character aux = bonequinhos;
+	while (aux != NULL)
+	{
+		numColonos++;
+		aux = aux->next;
+	}
+	return (numColonos - 2);
+}
 //Guardar estado actual do mapa
 void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 {
 	int i, j, z=0;
-	
+	int qtEdificios=0;
 		data = fopen("data.txt", "w");
 		for (i = 0; i < MAPWIDTH; i++)
 		{
@@ -2335,6 +2363,43 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 		fprintf(data, "%d\n", madeira);
 		fprintf(data, "%d\n", comida);
 		fprintf(data, "%d\n", pedra);
+		//guardar edificios -- falta os colonos que estao dentro
+		//guardar quantidade de edificios
+		quantidadeEdificios = contarEdificios();
+		fprintf(data, "%d\n",quantidadeEdificios);
+		Building aux = edificios;
+		while (aux != NULL)
+		{
+			fprintf(data, "%d\n", aux->constructionCounter);
+			fprintf(data, "%d\n", aux->minTimer);
+			fprintf(data, "%s\n", aux->name);
+			fprintf(data, "%d\n", aux->timer);
+			fprintf(data, "%d\n", aux->type);
+			fprintf(data, "%d\n", aux->x);
+			fprintf(data, "%d\n", aux->y);
+			
+			aux = aux->next;
+		}
+		//Guardar colonos, falta path e tarefas
+		quantidadeColonos = contarColonos();
+		fprintf(data, "%d\n", quantidadeColonos);
+		Character colonosAux = bonequinhos;
+		while (colonosAux != NULL)
+		{
+			fprintf(data, "%s\n", colonosAux->action);
+//bug			fprintf(data, "%d\n", colonosAux->animationFrame);
+//bug			fprintf(data, "%s\n", colonosAux->animationTimer);
+			fprintf(data, "%d\n", colonosAux->comida);
+			fprintf(data, "%d\n", colonosAux->direcao);
+			fprintf(data, "%d\n", colonosAux->madeira);
+			fprintf(data, "%d\n", colonosAux->movimento);
+			fprintf(data, "%d\n", colonosAux->pedra);
+			//fprintf(data, "%s\n", colonosAux->spriteSheet);
+			fprintf(data, "%f\n", colonosAux->x);
+			fprintf(data, "%f\n", colonosAux->y);
+			
+			colonosAux = colonosAux->next;
+		}
 		fclose(data);
 	
 }
@@ -2360,6 +2425,70 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 		fscanf(data, "%d\n", &madeira);
 		fscanf(data, "%d\n", &comida);
 		fscanf(data, "%d\n", &pedra);
+		//ler os edificios iniciais
+		fscanf(data, "%d\n", &quantidadeEdificios);
+		Building aux=edificios;
+		for (int i=0; i < 3; i++)
+		{
+			fscanf(data, "%d\n", &edificios->constructionCounter);
+			fscanf(data, "%d\n", &edificios->minTimer);
+			fscanf(data, "%s\n", &edificios->name);
+			fscanf(data, "%d\n", &edificios->timer);
+			fscanf(data, "%d\n", &edificios->type);
+			fscanf(data, "%d\n", &edificios->x);
+			fscanf(data, "%d\n", &edificios->y);
+			edificios = edificios->next;
+		}
+		edificios = aux;
+		//ler edificios construidos
+		while (quantidadeEdificios > 0)
+		{
+			InsertBuilding(edificios, 0, 0, 0);
+			fscanf(data, "%d\n", &edificios->constructionCounter);
+			fscanf(data, "%d\n", &edificios->minTimer);
+			fscanf(data, "%s\n", &edificios->name);
+			fscanf(data, "%d\n", &edificios->timer);
+			fscanf(data, "%d\n", &edificios->type);
+			fscanf(data, "%d\n", &edificios->x);
+			fscanf(data, "%d\n", &edificios->y);
+			quantidadeEdificios--;
+			//edificios = edificios->next;
+		}
+		//ler colonos
+		fscanf(data, "%d", &quantidadeColonos);
+		Character CharAux = bonequinhos;
+		for (int j = 0; j < 2; j++)
+		{
+			fscanf(data, "%[^\n]\n", &bonequinhos->action);
+			//bug			fprintf(data, "%d\n", colonosAux->animationFrame);
+			//bug			fprintf(data, "%s\n", colonosAux->animationTimer);
+			fscanf(data, "%d\n", &bonequinhos->comida);
+			fscanf(data, "%d\n", &bonequinhos->direcao);
+			fscanf(data, "%d\n", &bonequinhos->madeira);
+			fscanf(data, "%d\n", &bonequinhos->movimento);
+			fscanf(data, "%d\n", &bonequinhos->pedra);
+			//fprintf(data, "%s\n", colonosAux->spriteSheet);
+			fscanf(data, "%f\n", &bonequinhos->x);
+			fscanf(data, "%f\n", &bonequinhos->y);
+			bonequinhos = bonequinhos->next;
+		}
+		bonequinhos = CharAux;
+		while (quantidadeColonos > 0)
+		{
+			InsertCharacter(bonequinhos, men1, 0, 0, 0, 0);
+			fscanf(data, "%s\n", &bonequinhos->action);
+			//bug			fprintf(data, "%d\n", colonosAux->animationFrame);
+			//bug			fprintf(data, "%s\n", colonosAux->animationTimer);
+			fscanf(data, "%d\n", &bonequinhos->comida);
+			fscanf(data, "%d\n", &bonequinhos->direcao);
+			fscanf(data, "%d\n", &bonequinhos->madeira);
+			fscanf(data, "%d\n", &bonequinhos->movimento);
+			fscanf(data, "%d\n", &bonequinhos->pedra);
+			//fprintf(data, "%s\n", colonosAux->spriteSheet);
+			fscanf(data, "%f\n", &bonequinhos->x);
+			fscanf(data, "%f\n", &bonequinhos->y);
+			quantidadeColonos--;
+		}
 		fclose(data);
 	}
 	
@@ -2539,8 +2668,8 @@ void LoadInitialState(){
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
 	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(10, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(12, 0), WorldToPixel(5, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(15, 0), WorldToPixel(7, 1), 2, 1);
+	//bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(12, 0), WorldToPixel(5, 1), 2, 1);
+	//bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(15, 0), WorldToPixel(7, 1), 2, 1);
 
 
 }
