@@ -180,6 +180,7 @@ typedef struct character
 	int pedra; //Quantidade de pedra que o boneco transporta
 	int comida; //Quantidade de comida que o boneco transporta
 	char action[256]; //Acção que o colono está a fazer num determinado momento
+	bool tarefaIniciada; //Indica se a tarefa atual foi ou não iniciada
 }* Character;
 
 //Descreve um edificio
@@ -212,13 +213,26 @@ typedef struct node
 	int contadorVizinhos; //Nº de vizinhos uteis deste node
 }* Node;
 
-
 //Descreve uma opção / tecla que pode ser premida
 typedef struct opcao
 {
 	char tecla; //Tecla que pode ser premida
+	char descricao[256]; //descrição da opção
 	struct opcao * next;
 }* Opcao;
+
+Opcao opcaoAtiva; //Opção final que foi seleccionada pelo jogador e que será executada
+
+//Conta o número de opções na lista
+int CountOpcoes(Opcao opcoes){
+	Opcao listaOpcoes = opcoes;
+	int contador = 0;
+	while (listaOpcoes != NULL){
+		contador++;
+		listaOpcoes = listaOpcoes->next;
+	}
+	return contador;
+}
 
 //Matriz que define o mapa
 //[0] - Tipo de sprite
@@ -383,6 +397,10 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 		//Descansar
 		tarefa->tempo = 12000;
 		break;
+	case 10:
+		//Construir casa
+		tarefa->tempo = 3000;
+		break;
 	default:
 		break;
 	}
@@ -398,9 +416,10 @@ Node InsertNode(Node lista, Node node){
 	return aux;
 }
 
-Opcao InsertOption(Opcao opcoes, char tecla){
+Opcao InsertOption(Opcao opcoes, char tecla, char descricao[256]){
 	Opcao opcao = malloc(sizeof(struct opcao));
 	opcao->tecla = tecla;
+	strcpy(opcao->descricao, descricao);
 	opcao->next = opcoes;
 	return opcao;
 }
@@ -1277,6 +1296,18 @@ Building FindBuilding(Building endereco, int i, int j){
 	return building;
 }
 
+//Encontra uma opção numa lista de opções
+Opcao FindOpcao(Opcao listaOpcoes, char caracter){
+	Opcao opcao = NULL;
+	while (listaOpcoes != NULL){
+		if (listaOpcoes->tecla = caracter){
+			opcao = listaOpcoes;
+		}
+		listaOpcoes = listaOpcoes->next;
+	}
+	return opcao;
+}
+
 //Encontrar floresta numa determinada posicao
 Forest FindForest(Forest endereco, int i, int j){
 	Forest forest = NULL;
@@ -1358,6 +1389,7 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->madeira = 0;
 	boneco->pedra = 0;
 	boneco->comida = 0;
+	boneco->tarefaIniciada = false;
 	strcpy(boneco->action, "Idle");
 	return boneco;
 }
@@ -1833,6 +1865,36 @@ void UpdateCharacters(Character endereco){
 					}
 
 					break;
+				case 10:
+					//Build House 1
+					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+						//Acabamos de construir uma casa!
+
+						strcpy(endereco->action, "Idle");
+
+						endereco->tarefaIniciada = false;
+						//Remover a tarefa atual
+						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+					}
+					else{
+						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+
+						if (!endereco->tarefaIniciada){
+							edificios = InsertBuilding(edificios, endereco->tarefa->x, endereco->tarefa->y, 39);
+							madeira -= 100;
+							pedra -= 100;
+							endereco->tarefaIniciada = true;
+						}
+
+						char result[500];
+						sprintf(result, "%s%d%s", "Bulding House (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+						strcpy(endereco->action, result);
+
+						endereco->tarefa->tempoExecucao++;
+
+					}
+					break;
 				default:
 					break;
 				}
@@ -2023,6 +2085,11 @@ void ProcessMouseClicks(Character bonequinhos){
 		if (bounding_box_collision(x, y, 10, 20, bonequinhos->x + offsetX, bonequinhos->y + offsetY, 16, 24)){
 			//O rato está por cima de um bonequinho!
 			bonecoSelecionado = bonequinhos;
+
+			//Adicionar opção de construir
+			opcoes = NULL;
+			opcoes = InsertOption(opcoes, 'b', "Build");
+
 			edificioSelecionado = NULL;
 			continuar = false;
 			break;
@@ -2031,7 +2098,7 @@ void ProcessMouseClicks(Character bonequinhos){
 	}
 
 	//Verificar cliques para mandar bonecos andar
-	if (continuar && bonecoSelecionado != NULL && !bounding_box_collision(x, y, 10, 20, bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, 16, 24)){
+	if (continuar && (bonecoSelecionado != NULL && (bonecoSelecionado->tarefa == NULL || bonecoSelecionado->tarefa != NULL && bonecoSelecionado->tarefa->type < 10)) && bonecoSelecionado != NULL && !bounding_box_collision(x, y, 10, 20, bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, 16, 24)){
 		
 		//Verificar se está a ser mandado para casa
 		while (aux != NULL){
@@ -2080,10 +2147,47 @@ void ProcessMouseClicks(Character bonequinhos){
 
 		if (continuar){
 			//Andar para uma localização no mapa
-			bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));	
-			strcpy(bonecoSelecionado->action, "Walking");
-			if (bonecoSelecionado->path != NULL){
-				bonecoSelecionado = NULL;
+
+			if (opcaoAtiva != NULL){
+
+				int xi = PixelToWorld((x / TILEWIDTH) * TILEWIDTH - offsetX, 0);
+				int yi = PixelToWorld((y / TILEHEIGHT) * TILEHEIGHT - offsetY, 1);
+
+				switch (opcaoAtiva->tecla)
+				{
+				case '1':
+					//Construir a casa 1
+					//Encontrar um vizinho em que se possa andar
+					if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
+						//Limpar tarefas que tenha a criar uma nova TODO: free???
+						bonecoSelecionado->tarefa = NULL;
+						bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 10, xi, yi, NULL);
+
+						printf("Inserida tarefa para construir casa\n");
+						printf("x: %d\n", xi);
+						printf("y: %d\n", yi);
+						printf("\n\n");
+
+						strcpy(bonecoSelecionado->action, "Walking to build House 1");
+						continuar = false;
+						bonecoSelecionado = NULL;
+						opcaoAtiva = NULL;
+					}
+					else{
+						setTextoErro("Can't reach space!");
+					}
+					break;
+				default:
+					break;
+				}
+			}
+			else{
+				//Não há nenhuma opção seleccionada, vamos simplemente andar para uma posição no mapa
+				bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
+				strcpy(bonecoSelecionado->action, "Walking");
+				if (bonecoSelecionado->path != NULL){
+					bonecoSelecionado = NULL;
+				}
 			}
 		}
 		
@@ -2221,7 +2325,7 @@ void DrawBonecoSelecionado(){
 		al_draw_filled_rounded_rectangle(fundoX, fundoY, DISPLAYWIDTH - 20, DISPLAYHEIGHT - 20,
 			10, 10, GREY);
 
-		//Nome do edifício
+		//Nome do objeto
 		al_draw_text(titulos,
 			WHITE, fundoX + 10, fundoY + 10, 0,
 			"Colonist");
@@ -2240,6 +2344,27 @@ void DrawBonecoSelecionado(){
 
 		al_draw_rectangle(bonecoSelecionado->x + offsetX, bonecoSelecionado->y + offsetY, bonecoSelecionado->x + 16 + offsetX, bonecoSelecionado->y + 24 + offsetY,
 			RED, 2);
+
+		//Desenhar opções
+		Opcao listaOpcoes = opcoes;
+		int offset = 100;
+		int offsetEsquerda = 50 * CountOpcoes(opcoes);
+		while (listaOpcoes != NULL){
+
+			char str[100];
+			sprintf(str, "%c", listaOpcoes->tecla);
+
+			al_draw_text(titulos,
+				WHITE, fundoX + 400 - offsetEsquerda + offset, fundoY + 10, 0,
+				str);
+
+			al_draw_text(textos,
+				WHITE, fundoX + 400 - offsetEsquerda + offset, fundoY + 45, 0,
+				listaOpcoes->descricao);
+
+			offset += 100;
+			listaOpcoes = listaOpcoes->next;
+		}
 
 		if (!bonecoHovered){
 			DrawHoveredTile();
@@ -2290,7 +2415,7 @@ void DrawEdificioSelecionado(){
 					"Empty house");
 
 				if (OptionExists('e') == false){
-					opcoes = InsertOption(opcoes, 'e');
+					opcoes = InsertOption(opcoes, 'e', "Empty House");
 				}
 
 			}
@@ -2364,6 +2489,7 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 	}
 	
 }
+
 void UpdateInput(){
 
 
@@ -2459,6 +2585,39 @@ void UpdateInput(){
 				}
 				//Remover esta opção da lista de opções
 				opcoes = RemoveOption(opcoes, 'e');
+				break;
+
+			case 'b':
+				//Opção "Build"
+				if (al_key_down(&state, ALLEGRO_KEY_B)){
+					opcoes = NULL;
+					//Todo: adicionar opções do tipo de edificio.
+					opcoes = InsertOption(opcoes, 'w', "Warehouse");
+					opcoes = InsertOption(opcoes, 'f', "Farmhouse");
+					opcoes = InsertOption(opcoes, 'h', "House");
+				}
+				
+				break;
+
+			case 'h':
+				//Opção "Build" -> "House"
+				if (al_key_down(&state, ALLEGRO_KEY_H)){
+					opcoes = NULL;
+					//Todo: adicionar opções do tipo de casa.
+					opcoes = InsertOption(opcoes, '4', "House 4");
+					opcoes = InsertOption(opcoes, '3', "House 3");
+					opcoes = InsertOption(opcoes, '2', "House 2");
+					opcoes = InsertOption(opcoes, '1', "House 1");
+				}
+
+				break;
+
+			case '1' :
+				//Casa 1
+				if (al_key_down(&state, ALLEGRO_KEY_1)){
+					opcaoAtiva = InsertOption(opcaoAtiva, '1', "build House 1");
+					opcoes = NULL;
+				}
 				break;
 			
 			default:
