@@ -1438,7 +1438,7 @@ float WorldToPixel(int value, int WidthOrHeight){
 
 bool AlmostEqualRelative(float A, float B)
 {
-	float maxRelDiff = VELOCIDADE_BONECOS / 50;
+	float maxRelDiff = VELOCIDADE_BONECOS / 30;
 	// Calculate the difference.
 	float diff = fabs(A - B);
 	A = fabs(A);
