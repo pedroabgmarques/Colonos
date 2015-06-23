@@ -161,7 +161,7 @@ typedef struct tarefa
 	//8 - Descarregar Vegetais
 	//9 - Descansar
 	int type; //Tipo de tarefa
-	int energianecessaria;
+	float energianecessaria;
 	int x, y; //Coordenadas da tarefa a executar
 	int tempo, tempoExecucao;
 	struct building *building; //Apontador para o edificio da tarefa, se houver
