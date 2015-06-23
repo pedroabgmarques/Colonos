@@ -420,18 +420,22 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 	case 10:
 		//Construir casa 1
 		tarefa->tempo = 7000;
+		tarefa->energianecessaria = 11;
 		break;
 	case 11:
 		//Construir casa 2
 		tarefa->tempo = 7000;
+		tarefa->energianecessaria = 11;
 		break;
 	case 12:
 		//Construir casa 3
 		tarefa->tempo = 7000;
+		tarefa->energianecessaria = 11;
 		break;
 	case 13:
 		//Construir casa 4
 		tarefa->tempo = 7000;
+		tarefa->energianecessaria = 11;
 		break;
 	default:
 		break;
@@ -1425,7 +1429,7 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->madeira = 0;
 	boneco->pedra = 0;
 	boneco->comida = 0;
-	boneco->energia = 100;
+	boneco->energia = 20;
 	boneco->tarefaIniciada = false;
 	strcpy(boneco->action, "Idle");
 	return boneco;
@@ -1527,6 +1531,7 @@ void setTextoErro(char texto[256]){
 void BuildHouseTask(Character endereco, int house){
 	if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 		//Acabamos de construir uma casa!
+		endereco->energia -= endereco->tarefa->energianecessaria;
 
 		strcpy(endereco->action, "Idle");
 
@@ -1788,7 +1793,6 @@ void UpdateCharacters(Character endereco){
 									setTextoErro("Can't store/gather any more wood!");
 									strcpy(endereco->action, "Idle");
 								}
-							
 
 						}
 						else{
@@ -1798,10 +1802,7 @@ void UpdateCharacters(Character endereco){
 							strcpy(endereco->action, result);
 							
 							endereco->tarefa->tempoExecucao++;
-
-							
 						}
-						printf(" descarga %d\n", endereco->energia);
 					}
 					
 					break;
@@ -1984,6 +1985,17 @@ void UpdateCharacters(Character endereco){
 				}
 				
 			}
+		}
+		if (endereco->energia <= 10)
+		{
+			endereco->tarefa = InsertTarefa(endereco->tarefa, 0,endereco->x, endereco->y, NULL, 0, 0);
+
+			printf("Inserida tarefa de ir para casa\n");
+			printf("x: %d\n", endereco->x);
+			printf("y: %d\n", endereco->y);
+			printf("\n\n");
+
+			strcpy(endereco->action, "Walking to home");
 		}
 
 		if (endereco->next != NULL){
