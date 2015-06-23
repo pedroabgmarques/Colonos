@@ -1684,7 +1684,6 @@ void UpdateCharacters(Character endereco){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de apanhar madeira!
 							endereco->energia -= endereco->tarefa->energianecessaria;
-							printf(" recolha %d\n", endereco->energia);
 
 							strcpy(endereco->action, "Walking to unload wood");
 
@@ -1809,6 +1808,7 @@ void UpdateCharacters(Character endereco){
 				case 3:
 					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 						//Acabamos de apanhar pedra!
+						endereco->energia -= endereco->tarefa->energianecessaria;
 
 						strcpy(endereco->action, "Walking to unload stone");
 						
@@ -1832,7 +1832,7 @@ void UpdateCharacters(Character endereco){
 						char result[500];
 						sprintf(result, "%s%d%s", "Gathering stone (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 						strcpy(endereco->action, result);
-						endereco->energia -= endereco->tarefa->energianecessaria;
+						
 
 						endereco->tarefa->tempoExecucao++;
 						
@@ -1843,6 +1843,7 @@ void UpdateCharacters(Character endereco){
 					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de descarregar pedra!
+							endereco->energia -= endereco->tarefa->energianecessaria;
 							
 
 							//Incrementar a quantidade de pedra
@@ -1878,7 +1879,7 @@ void UpdateCharacters(Character endereco){
 							char result[500];
 							sprintf(result, "%s%d%s", "Unloading stone (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 							strcpy(endereco->action, result);
-							endereco->energia -= endereco->tarefa->energianecessaria;
+							
 							endereco->tarefa->tempoExecucao++;
 						}
 					}
@@ -1887,6 +1888,7 @@ void UpdateCharacters(Character endereco){
 				case 5:
 					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 						//Acabamos de apanhar comida!
+						endereco->energia -= endereco->tarefa->energianecessaria;
 
 						strcpy(endereco->action, "Walking to unload food");
 						
@@ -1910,7 +1912,7 @@ void UpdateCharacters(Character endereco){
 						char result[500];
 						sprintf(result, "%s%d%s", "Gathering food (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 						strcpy(endereco->action, result);
-						endereco->energia -= endereco->tarefa->energianecessaria;
+						
 
 						endereco->tarefa->tempoExecucao++;
 
