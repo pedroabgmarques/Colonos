@@ -2611,7 +2611,7 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 		//ler edificios construidos
 		while (quantidadeEdificios > 0)
 		{
-			InsertBuilding(edificios, 0, 0, 0);
+			edificios=InsertBuilding(edificios, 0, 0, 0);
 			fscanf(data, "%d\n", &edificios->constructionCounter);
 			fscanf(data, "%d\n", &edificios->minTimer);
 			fscanf(data, "%s\n", &edificios->name);
