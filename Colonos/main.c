@@ -1411,8 +1411,6 @@ void UpdateBuildings(Building endereco){
 
 				//Colocar o colono na lista de bonequinhos
 				listaBonecos->energia = 100;
-				//Retirar comida
-				comida -= 10;
 
 				Character aux2 = listaBonecos;
 				
@@ -1905,6 +1903,9 @@ void UpdateCharacters(Character endereco){
 					Character colono = edificio->colonists;
 					endereco->next = colono;
 					edificio->colonists = endereco;
+
+					//Retirar comida
+					comida -= 10;
 
 					//Remover o boneco selecionado
 					if (bonecoSelecionado != NULL){
