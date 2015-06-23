@@ -185,7 +185,7 @@ typedef struct character
 	int madeira; //Quantidade de madeira que o boneco transporta
 	int pedra; //Quantidade de pedra que o boneco transporta
 	int comida; //Quantidade de comida que o boneco transporta
-	int energia;// energia para executar tarafes
+	float energia;// energia para executar tarafes
 	char action[256]; //Acção que o colono está a fazer num determinado momento
 	bool tarefaIniciada; //Indica se a tarefa atual foi ou não iniciada
 }* Character;
@@ -573,18 +573,33 @@ Node RemoveNode(Node enderecoInicioLista, int x, int y){
 	}
 }
 
-Character RemoveCharacter(Character enderecoInicioLista, int x, int y){
+Character RemoveCharacter(Character enderecoInicioLista, Character boneco){
 	Character aux;
 	if (enderecoInicioLista != NULL){
 		//Lista não está vazia
-		if (enderecoInicioLista->x == x && enderecoInicioLista->y == y){
+		if (enderecoInicioLista->x == boneco->x 
+			&& enderecoInicioLista->y == boneco->y
+			&& enderecoInicioLista->action == boneco->action
+			&& enderecoInicioLista->animationFrame == boneco->animationFrame
+			&& enderecoInicioLista->animationTimer == boneco->animationTimer
+			&& enderecoInicioLista->comida == boneco->comida
+			&& enderecoInicioLista->direcao == boneco->direcao
+			&& enderecoInicioLista->energia == boneco->energia
+			&& enderecoInicioLista->madeira == boneco->madeira
+			&& enderecoInicioLista->movimento == boneco->movimento
+			&& enderecoInicioLista->next == boneco->next
+			&& enderecoInicioLista->path == boneco->path
+			&& enderecoInicioLista->pedra == boneco->pedra
+			&& enderecoInicioLista->spriteSheet == boneco->spriteSheet
+			&& enderecoInicioLista->tarefa == boneco->tarefa
+			&& enderecoInicioLista->tarefaIniciada == boneco->tarefaIniciada){
 			//encontramos o elemento a eliminar
 			aux = enderecoInicioLista->next;
 			return aux;
 		}
 		else{
 			//não é este o elemento e eliminar, continuar a recursão
-			enderecoInicioLista->next = RemoveCharacter(enderecoInicioLista->next, x, y);
+			enderecoInicioLista->next = RemoveCharacter(enderecoInicioLista->next, boneco);
 			return enderecoInicioLista;
 		}
 	}
@@ -1358,17 +1373,72 @@ void UpdateFarms(Farm endereco){
 
 //Atualizar edificions
 void UpdateBuildings(Building endereco){
-	while (endereco != NULL){
-		if (endereco->constructionCounter < 32 && endereco->minTimer > 0){
+	Building aux = endereco;
+
+	while (aux != NULL){
+		if (aux->constructionCounter < 32 && aux->minTimer > 0){
 			//incrementar timer
-			endereco->timer += 1;
+			aux->timer += 1;
 			//passar fase?
-			if (endereco->timer > endereco->minTimer){
-				endereco->timer = 0;
-				endereco->constructionCounter++;
+			if (aux->timer > aux->minTimer){
+				aux->timer = 0;
+				aux->constructionCounter++;
 			}
 		}
-		endereco = endereco->next;
+
+		//Dar energia aos bonecos
+		Character bonecos = aux->colonists;
+		while (bonecos != NULL){
+			if (bonecos->energia <= 100)
+				bonecos->energia += 0.1;
+			bonecos = bonecos->next;
+		}
+
+		aux = aux->next;
+	}
+
+	aux = endereco;
+	while (aux != NULL){
+		Character listaBonecos = aux->colonists;
+		while (listaBonecos != NULL){
+
+			if (listaBonecos->energia > 100){
+
+				printf("Boneco pronto para sair de casa!\n");
+
+				aux->colonists = RemoveCharacter(aux->colonists, listaBonecos);
+				
+
+				//Colocar o colono na lista de bonequinhos
+				listaBonecos->energia = 100;
+				//Retirar comida
+				comida -= 10;
+
+				Character aux2 = listaBonecos;
+				
+				//Aqui podia-se tentar manter a tarefa anterior..
+				listaBonecos->tarefa = NULL;
+
+				listaBonecos = RemoveCharacter(listaBonecos, listaBonecos);
+				aux2->next = bonequinhos;
+				bonequinhos = aux2;
+
+				
+			}
+			else{
+				printf("Energia: %f\n", listaBonecos->energia);
+			}
+
+			if (listaBonecos != NULL){
+				listaBonecos = listaBonecos->next;
+			}
+			else{
+				break;
+			}
+			
+		}
+
+		aux = aux->next;
 	}
 }
 
@@ -1550,6 +1620,7 @@ int XHeadQuarters(){
 			}
 		}
 	}
+	return 0;
 }
 
 //Devolve a posicao Y do edificio headquarters
@@ -1561,6 +1632,7 @@ int YHeadQuarters(){
 			}
 		}
 	}
+	return 0;
 }
 
 Building FindAvailableBuilding(Building edificios){
@@ -1579,7 +1651,7 @@ void VerificarEnergia(Character endereco){
 	{
 
 		endereco->path = NULL;
-		endereco->tarefa = NULL;
+		//endereco->tarefa = NULL;
 
 		Building edificio = FindAvailableBuilding(edificios);
 		endereco->tarefa = InsertTarefa(endereco->tarefa, 0, edificio->x, edificio->y, edificio, 0, 0);
@@ -1827,23 +1899,21 @@ void UpdateCharacters(Character endereco){
 					//IR PARA CASA
 					//Remover este boneco da lista de bonecos
 					//Remover da lista de bonecos
-					bonequinhos = RemoveCharacter(bonequinhos, endereco->x, endereco->y);
+					bonequinhos = RemoveCharacter(bonequinhos, endereco);
 					//Adicionar este boneco à lista da casa
 					Building edificio = endereco->tarefa->building;
 					Character colono = edificio->colonists;
 					endereco->next = colono;
 					edificio->colonists = endereco;
-					//Remover a tarefa
-					endereco->tarefa = NULL;
 
-					/*Remover o boneco selecionado*/
+					//Remover o boneco selecionado
 					if (bonecoSelecionado != NULL){
 						if (endereco->x == bonecoSelecionado->x && endereco->y == bonecoSelecionado->y){
 							bonecoSelecionado = NULL;
 						}
 					}
-					
-					
+
+
 					break;
 				case 1:
 					//Apanhar madeira
@@ -2766,8 +2836,8 @@ void DrawBonecoSelecionado(){
 		al_draw_text(textos,
 			WHITE, fundoX + 10, fundoY + 45, 0,
 			bonecoSelecionado->action);
-		char *result[500];
-		sprintf(result, "%s%d%s", "Energy (", bonecoSelecionado->energia, "%)");
+		char result[500];
+		sprintf(result, "%s%d%s", "Energy (", (int)bonecoSelecionado->energia, "%)");
 		al_draw_text(textos, WHITE, fundoX + 700, fundoY + 45, 0, result);
 
 		//Desenhar erros / avisos
@@ -3176,7 +3246,7 @@ void UpdateInput(){
 								aux->next = bonequinhos;
 								bonequinhos = aux;
 								//Remover o colono da lista de colonos nesta casa
-								edificioSelecionado->colonists = RemoveCharacter(edificioSelecionado->colonists, edificioSelecionado->colonists->x, edificioSelecionado->colonists->y);
+								edificioSelecionado->colonists = RemoveCharacter(edificioSelecionado->colonists, edificioSelecionado->colonists);
 								//Passar para o proximo colono da casa
 								edificioSelecionado->colonists = next;
 							}

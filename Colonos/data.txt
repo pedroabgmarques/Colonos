@@ -769,9 +769,9 @@
 1
 1
 1
-45
-0
-0
+1
+1
+1
 1
 1
 1
@@ -3673,17 +3673,10 @@
 1
 1
 1
-85
-100
-100
-1
-32
+210
+80
 200
-House
 0
-45
-7
-12
 32
 0
 House
@@ -3706,19 +3699,19 @@ Headquarters
 5
 15
 0
-Walking to gather wood
+Walking to build House
+0
+0
 0
 1
 0
+13
+5
+Walking to unload wood
+0
+2
+5
 1
 0
-18
 10
-Walking to gather wood
-0
-1
-0
-1
-0
-18
-4
+6
