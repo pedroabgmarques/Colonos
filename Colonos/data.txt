@@ -3673,9 +3673,9 @@
 1
 1
 1
-210
-80
-200
+40
+100
+0
 0
 32
 0
@@ -3699,19 +3699,19 @@ Headquarters
 5
 15
 0
-Walking to build House
+Walking to build Farmhouse
 0
+2
 0
+1
+0
+15
+10
+Idle
+0
+2
 0
 1
 0
 13
-5
-Walking to unload wood
-0
-2
-5
-1
-0
-10
-6
+4

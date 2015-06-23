@@ -166,8 +166,6 @@ typedef struct tarefa
 	int tempo, tempoExecucao;
 	struct building *building; //Apontador para o edificio da tarefa, se houver
 	struct tarefa * next; //Apontador para a proxima tarefa
-	int custoMadeira; //custo da tarefa em madeira
-	int custoPedra; //custo da tarefa em pedra
 }* Tarefa;
 
 //Descreve um bonequinho
@@ -362,7 +360,7 @@ void ResetSearchNodes(){
 }
 
 //Insere uma tarefa numa lista de tarefas
-Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edificio, int custoMadeira, int custoPedra){
+Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edificio){
 	Tarefa tarefa = malloc(sizeof(struct tarefa));
 	tarefa->type = type;
 	tarefa->x = x;
@@ -476,8 +474,6 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 	tarefa->tempoExecucao = 0;
 	tarefa->building = edificio;
 	tarefa->next = listaTarefas;
-	tarefa->custoMadeira = custoMadeira;
-	tarefa->custoPedra = custoPedra;
 	return tarefa;
 }
 
@@ -1652,7 +1648,7 @@ void VerificarEnergia(Character endereco){
 		//endereco->tarefa = NULL;
 
 		Building edificio = FindAvailableBuilding(edificios);
-		endereco->tarefa = InsertTarefa(endereco->tarefa, 0, edificio->x, edificio->y, edificio, 0, 0);
+		endereco->tarefa = InsertTarefa(endereco->tarefa, 0, edificio->x, edificio->y, edificio);
 		endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), edificio->y, edificio->x + 1);
 
 		printf("Inserida tarefa de ir para casa\n");
@@ -1790,8 +1786,6 @@ void BuildHouseTask(Character endereco, int house){
 				edificios = InsertBuilding(edificios, endereco->tarefa->x - 1, endereco->tarefa->y, house);
 			}
 			
-			madeira -= endereco->tarefa->custoMadeira;
-			pedra -= endereco->tarefa->custoPedra;
 			endereco->tarefaIniciada = true;
 		}
 
@@ -1946,7 +1940,7 @@ void UpdateCharacters(Character endereco){
 
 							//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
 							//Vamos descarregar madeira!
-							endereco->tarefa = InsertTarefa(endereco->tarefa, 2, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+							endereco->tarefa = InsertTarefa(endereco->tarefa, 2, enderecoTarefaX, enderecoTarefaY, NULL);
 
 							printf("Inserida tarefa para descarregar madeira\n");
 							printf("x: %d\n", enderecoTarefaX);
@@ -2005,7 +1999,7 @@ void UpdateCharacters(Character endereco){
 									{
 
 										if (FazerBonecoAndarVizinho(endereco, enderecoTarefaX, enderecoTarefaY)){
-											endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+											endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL);
 
 											printf("Inserida tarefa para apanhar madeira\n");
 											printf("x: %d\n", enderecoTarefaX);
@@ -2063,7 +2057,7 @@ void UpdateCharacters(Character endereco){
 
 						//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
 						//Vamos descarregar pedra!
-						endereco->tarefa = InsertTarefa(endereco->tarefa, 4, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL, 0, 0);
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 4, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL);
 
 					}
 					else{
@@ -2106,7 +2100,7 @@ void UpdateCharacters(Character endereco){
 
 								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
 								strcpy(endereco->action, "Walking to gather stone");
-								endereco->tarefa = InsertTarefa(endereco->tarefa, 3, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+								endereco->tarefa = InsertTarefa(endereco->tarefa, 3, enderecoTarefaX, enderecoTarefaY, NULL);
 							}
 							else{
 								setTextoErro("Can't store/gather any more stone!");
@@ -2145,7 +2139,7 @@ void UpdateCharacters(Character endereco){
 
 						//Inserir a tarefa de descarregar comida, guardando o x, y em que estavamos a apanhar
 						//Vamos descarregar comida!
-						endereco->tarefa = InsertTarefa(endereco->tarefa, 6, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL, 0, 0);
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 6, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL);
 
 					}
 					else{
@@ -2187,7 +2181,7 @@ void UpdateCharacters(Character endereco){
 
 								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
 								strcpy(endereco->action, "Walking to gather comida");
-								endereco->tarefa = InsertTarefa(endereco->tarefa, 5, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+								endereco->tarefa = InsertTarefa(endereco->tarefa, 5, enderecoTarefaX, enderecoTarefaY, NULL);
 							}
 							else{
 								setTextoErro("Can't store/gather any more comida!");
@@ -2454,7 +2448,7 @@ void BuildFarmClick(Character bonecoSelecionado, int xi, int yi, int tarefa){
 		//Encontrar um vizinho em que se possa andar
 		if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 			bonecoSelecionado->tarefa = NULL;
-			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi, NULL, 0, 0);
+			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi, NULL);
 
 			printf("Inserida tarefa para plantar\n");
 			printf("x: %d\n", xi);
@@ -2474,7 +2468,7 @@ void BuildFarmClick(Character bonecoSelecionado, int xi, int yi, int tarefa){
 	}
 }
 
-void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int tarefa, int custoMadeira, int custoPedra){
+void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int tarefa){
 	//Construir uma casa
 
 	//Verificar se se pode construir neste espaço
@@ -2483,7 +2477,7 @@ void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int taref
 		if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 			//Limpar tarefas que tenha a criar uma nova TODO: free???
 			bonecoSelecionado->tarefa = NULL;
-			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi, NULL, custoMadeira, custoPedra);
+			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi, NULL);
 
 			printf("Inserida tarefa para construir casa\n");
 			printf("x: %d\n", xi);
@@ -2594,16 +2588,28 @@ void ProcessMouseClicks(Character bonequinhos){
 				switch (opcaoAtiva->tecla)
 				{
 				case '1':
-					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 10, opcaoAtiva->madeira, opcaoAtiva->pedra);
+					madeira -= opcaoAtiva->madeira;
+					pedra -= opcaoAtiva->pedra;
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 10);
+					
 					break;
 				case '2':
-					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 11, opcaoAtiva->madeira, opcaoAtiva->pedra);
+					madeira -= opcaoAtiva->madeira;
+					pedra -= opcaoAtiva->pedra;
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 11);
+					
 					break;
 				case '3':
-					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 12, opcaoAtiva->madeira, opcaoAtiva->pedra);
+					madeira -= opcaoAtiva->madeira;
+					pedra -= opcaoAtiva->pedra;
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 12);
+					
 					break;
 				case '4':
-					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 13, opcaoAtiva->madeira, opcaoAtiva->pedra);
+					madeira -= opcaoAtiva->madeira;
+					pedra -= opcaoAtiva->pedra;
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 13);
+					
 					break;
 
 				case 'm':
@@ -2658,7 +2664,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi + 1, yi)){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
-							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 14, xi, yi, NULL, opcaoAtiva->madeira, opcaoAtiva->pedra);
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 14, xi, yi, NULL);
 
 							printf("Inserida tarefa para construir Farmhouse\n");
 							printf("x: %d\n", xi);
@@ -2668,6 +2674,9 @@ void ProcessMouseClicks(Character bonequinhos){
 							strcpy(bonecoSelecionado->action, "Walking to build Farmhouse");
 							bonecoSelecionado = NULL;
 							opcaoAtiva = NULL;
+
+							madeira -= 160;
+							pedra -= 200;
 						}
 						else{
 							setTextoErro("Can't reach space!");
@@ -2742,7 +2751,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
-							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL, 0, 0);
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL);
 
 							printf("Inserida tarefa para apanhar madeira\n");
 							printf("x: %d\n", xi);
@@ -2773,7 +2782,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
-							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL, 0, 0);
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL);
 							strcpy(bonecoSelecionado->action, "Walking to gather stone");
 							continuar = false;
 							bonecoSelecionado = NULL;
@@ -2798,7 +2807,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
-							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 5, xi, yi, NULL, 0, 0);
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 5, xi, yi, NULL);
 							strcpy(bonecoSelecionado->action, "Walking to gather food");
 							continuar = false;
 							bonecoSelecionado = NULL;
