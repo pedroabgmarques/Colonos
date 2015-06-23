@@ -1783,7 +1783,7 @@ void BuildHouseTask(Character endereco, int house){
 			}
 			else{
 				//Casas
-				edificios = InsertBuilding(edificios, endereco->tarefa->x - 1, endereco->tarefa->y, house);
+				edificios = InsertBuilding(edificios, endereco->tarefa->x, endereco->tarefa->y, house);
 			}
 			
 			endereco->tarefaIniciada = true;
