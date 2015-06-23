@@ -2625,9 +2625,9 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 			fprintf(data, "%d\n", colonosAux->movimento);
 			fprintf(data, "%d\n", colonosAux->pedra);
 			//fprintf(data, "%s\n", colonosAux->spriteSheet);
-			fprintf(data, "%f\n", colonosAux->x);
-			fprintf(data, "%f\n", colonosAux->y);
 			
+			fprintf(data, "%d\n", PixelToWorld(colonosAux->x,0));
+			fprintf(data, "%d\n", PixelToWorld(colonosAux->y,1));
 			colonosAux = colonosAux->next;
 		}
 		fclose(data);
@@ -2687,9 +2687,10 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 		//ler colonos
 		fscanf(data, "%d", &quantidadeColonos);
 		Character CharAux = bonequinhos;
+		int posicaoX=0,posicaoY=0;
 		for (int j = 0; j < 2; j++)
 		{
-			fscanf(data, "%[^\n]\n", &bonequinhos->action);
+			fscanf(data, "%s\n", &bonequinhos->action);
 			//bug			fprintf(data, "%d\n", colonosAux->animationFrame);
 			//bug			fprintf(data, "%s\n", colonosAux->animationTimer);
 			fscanf(data, "%d\n", &bonequinhos->comida);
@@ -2698,14 +2699,17 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 			fscanf(data, "%d\n", &bonequinhos->movimento);
 			fscanf(data, "%d\n", &bonequinhos->pedra);
 			//fprintf(data, "%s\n", colonosAux->spriteSheet);
-			fscanf(data, "%f\n", &bonequinhos->x);
-			fscanf(data, "%f\n", &bonequinhos->y);
+			fscanf(data, "%d\n", &posicaoX);
+			fscanf(data, "%d\n", &posicaoY);
+			bonequinhos->x = WorldToPixel(posicaoX, 0);
+			bonequinhos->y = WorldToPixel(posicaoY, 1);
+
 			bonequinhos = bonequinhos->next;
 		}
 		bonequinhos = CharAux;
 		while (quantidadeColonos > 0)
 		{
-			InsertCharacter(bonequinhos, men1, 0, 0, 0, 0);
+			bonequinhos=InsertCharacter(bonequinhos, men1, 0, 0, 0, 0);
 			fscanf(data, "%s\n", &bonequinhos->action);
 			//bug			fprintf(data, "%d\n", colonosAux->animationFrame);
 			//bug			fprintf(data, "%s\n", colonosAux->animationTimer);
