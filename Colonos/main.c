@@ -738,6 +738,19 @@ int ListCountHouseCharacters(Building edificios){
 	return contador;
 }
 
+//Conta os bonecos que estão numa casa
+int ListCountCharactersHouse(Building casa){
+	int contador = 0;
+	if (casa != NULL){
+		Character bonecos = casa->colonists;
+		while (bonecos != NULL){
+			contador++;
+			bonecos = bonecos->next;
+		}
+	}
+	return contador;
+}
+
 //Devolve o node com distância mais pequena ao objetivo
 Node FindBestNode(){
 	Node currentTile;
@@ -1550,6 +1563,37 @@ int YHeadQuarters(){
 	}
 }
 
+Building FindAvailableBuilding(Building edificios){
+	Building casa = NULL;
+	Building casas = edificios;
+	while (casas != NULL){
+		if (ListCountCharactersHouse(casas) < 2){
+			return casas;
+		}
+	}
+	return casa;
+}
+
+void VerificarEnergia(Character endereco){
+	if (endereco->energia <= 20)
+	{
+
+		endereco->path = NULL;
+		endereco->tarefa = NULL;
+
+		Building edificio = FindAvailableBuilding(edificios);
+		endereco->tarefa = InsertTarefa(endereco->tarefa, 0, edificio->x, edificio->y, edificio, 0, 0);
+		endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), edificio->y, edificio->x + 1);
+
+		printf("Inserida tarefa de ir para casa\n");
+		printf("x: %d\n", endereco->x);
+		printf("y: %d\n", endereco->y);
+		printf("\n\n");
+
+		strcpy(endereco->action, "Walking home to rest");
+	}
+}
+
 //Faz o boneco andar para um vizinho de determinadas coordenadas
 bool FazerBonecoAndarVizinho(Character boneco, int xi, int yi){
 	bool result = false;
@@ -1593,7 +1637,7 @@ void PlantFarmTask(Character endereco, int farm){
 		//Remover a tarefa atual
 		endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
-		
+		VerificarEnergia(endereco);
 
 	}
 	else{
@@ -1656,6 +1700,8 @@ void BuildHouseTask(Character endereco, int house){
 			mapDef[y + 2][x + 1][1] = 0;
 			mapDef[y + 2][x + 1][2] = 0;
 		}
+
+		VerificarEnergia(endereco);
 		
 
 	}
@@ -1914,6 +1960,8 @@ void UpdateCharacters(Character endereco){
 									strcpy(endereco->action, "Idle");
 								}
 
+								VerificarEnergia(endereco);
+
 						}
 						else{
 							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
@@ -1994,6 +2042,8 @@ void UpdateCharacters(Character endereco){
 								strcpy(endereco->action, "Idle");
 							}
 
+							VerificarEnergia(endereco);
+
 						}
 						else{
 							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
@@ -2073,6 +2123,8 @@ void UpdateCharacters(Character endereco){
 								strcpy(endereco->action, "Idle");
 							}
 
+							VerificarEnergia(endereco);
+
 						}
 						else{
 							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
@@ -2138,17 +2190,7 @@ void UpdateCharacters(Character endereco){
 				
 			}
 		}
-		if (endereco->energia <= 10)
-		{
-			endereco->tarefa = InsertTarefa(endereco->tarefa, 0,endereco->x, endereco->y, NULL, 0, 0);
-
-			printf("Inserida tarefa de ir para casa\n");
-			printf("x: %d\n", endereco->x);
-			printf("y: %d\n", endereco->y);
-			printf("\n\n");
-
-			strcpy(endereco->action, "Walking to home");
-		}
+		
 
 		if (endereco->next != NULL){
 			UpdateCharacters(endereco->next);
