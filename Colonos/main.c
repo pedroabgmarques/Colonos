@@ -158,6 +158,7 @@ typedef struct tarefa
 	//8 - Descarregar Vegetais
 	//9 - Descansar
 	int type; //Tipo de tarefa
+	int energianecessaria;
 	int x, y; //Coordenadas da tarefa a executar
 	int tempo, tempoExecucao;
 	struct building *building; //Apontador para o edificio da tarefa, se houver
@@ -179,6 +180,7 @@ typedef struct character
 	int madeira; //Quantidade de madeira que o boneco transporta
 	int pedra; //Quantidade de pedra que o boneco transporta
 	int comida; //Quantidade de comida que o boneco transporta
+	int energia;
 	char action[256]; //Acção que o colono está a fazer num determinado momento
 }* Character;
 
@@ -350,34 +352,42 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 	case 1:
 		//Apanhar Madeira
 		tarefa->tempo = 500;
+		tarefa->energianecessaria = 6;
 		break;
 	case 2:
 		//Descarregar madeira
 		tarefa->tempo = 200;
+		tarefa->energianecessaria = 2;
 		break;
 	case 3:
 		//Apanhar pedra
 		tarefa->tempo = 1000;
+		tarefa->energianecessaria = 7;
 		break;
 	case 4:
 		//Descarregar pedra
 		tarefa->tempo = 500;
+		tarefa->energianecessaria = 2;
 		break;
 	case 5:
 		//Apanhar peixe
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 3;
 		break;
 	case 6:
 		//Descarregar peixe
 		tarefa->tempo = 300;
+		tarefa->energianecessaria = 2;
 		break;
 	case 7:
 		//Apanhar vegetais
 		tarefa->tempo = 2500;
+		tarefa->energianecessaria = 5;
 		break;
 	case 8:
 		//Descarregar vegetais
 		tarefa->tempo = 250;
+		tarefa->energianecessaria = 2;
 		break;
 	case 9:
 		//Descansar
@@ -1358,6 +1368,7 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->madeira = 0;
 	boneco->pedra = 0;
 	boneco->comida = 0;
+	boneco->energia = 100;
 	strcpy(boneco->action, "Idle");
 	return boneco;
 }
@@ -1555,7 +1566,7 @@ void UpdateCharacters(Character endereco){
 					//Remover a tarefa
 					endereco->tarefa = NULL;
 
-					//Remover o boneco selecionado
+					/*Remover o boneco selecionado*/
 					if (bonecoSelecionado != NULL){
 						if (endereco->x == bonecoSelecionado->x && endereco->y == bonecoSelecionado->y){
 							bonecoSelecionado = NULL;
@@ -1570,8 +1581,12 @@ void UpdateCharacters(Character endereco){
 					//Verificar se o recurso ainda existe
 					if (FindForest(florestas, endereco->tarefa->x, endereco->tarefa->y)->phase == 0)
 					{
+						endereco->energia -= endereco->tarefa->energianecessaria;
+						printf(" recolha %d\n", endereco->energia);
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de apanhar madeira!
+							
+							
 
 							strcpy(endereco->action, "Walking to unload wood");
 
@@ -1598,6 +1613,7 @@ void UpdateCharacters(Character endereco){
 							printf("x: %d\n", enderecoTarefaX);
 							printf("y: %d\n", enderecoTarefaY);
 							printf("\n\n");
+							
 
 						}
 						else{
@@ -1606,8 +1622,10 @@ void UpdateCharacters(Character endereco){
 							char result[500];
 							sprintf(result, "%s%d%s", "Gathering wood (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 							strcpy(endereco->action, result);
+							endereco->energia -= endereco->tarefa->energianecessaria;
 
 							endereco->tarefa->tempoExecucao++;
+							
 						}
 					}
 					else{
@@ -1615,15 +1633,16 @@ void UpdateCharacters(Character endereco){
 						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 						setTextoErro("Resource is depleted!");
 						strcpy(endereco->action, "Idle");
-					}
-					
+					}				
 					break;
+					
 				case 2:
 					//Descarregar madeira
 					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de descarregar madeira!
-
+							//Decrementamos a energia do colono!
+							
 							
 
 								//Incrementar a quantidade de madeira
@@ -1680,8 +1699,12 @@ void UpdateCharacters(Character endereco){
 							char result[500];
 							sprintf(result, "%s%d%s", "Unloading wood (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 							strcpy(endereco->action, result);
+							endereco->energia -= endereco->tarefa->energianecessaria;
 							endereco->tarefa->tempoExecucao++;
+
+							
 						}
+						printf(" descarga %d\n", endereco->energia);
 					}
 					
 					break;
@@ -1690,6 +1713,7 @@ void UpdateCharacters(Character endereco){
 						//Acabamos de apanhar pedra!
 
 						strcpy(endereco->action, "Walking to unload stone");
+						
 
 						endereco->pedra += 5;
 
@@ -1710,6 +1734,7 @@ void UpdateCharacters(Character endereco){
 						char result[500];
 						sprintf(result, "%s%d%s", "Gathering stone (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 						strcpy(endereco->action, result);
+						endereco->energia -= endereco->tarefa->energianecessaria;
 
 						endereco->tarefa->tempoExecucao++;
 						
@@ -1720,6 +1745,7 @@ void UpdateCharacters(Character endereco){
 					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de descarregar pedra!
+							
 
 							//Incrementar a quantidade de pedra
 							pedra += endereco->pedra;
@@ -1754,6 +1780,7 @@ void UpdateCharacters(Character endereco){
 							char result[500];
 							sprintf(result, "%s%d%s", "Unloading stone (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 							strcpy(endereco->action, result);
+							endereco->energia -= endereco->tarefa->energianecessaria;
 							endereco->tarefa->tempoExecucao++;
 						}
 					}
@@ -1764,6 +1791,7 @@ void UpdateCharacters(Character endereco){
 						//Acabamos de apanhar comida!
 
 						strcpy(endereco->action, "Walking to unload food");
+						
 
 						endereco->comida += 5;
 
@@ -1784,6 +1812,7 @@ void UpdateCharacters(Character endereco){
 						char result[500];
 						sprintf(result, "%s%d%s", "Gathering food (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 						strcpy(endereco->action, result);
+						endereco->energia -= endereco->tarefa->energianecessaria;
 
 						endereco->tarefa->tempoExecucao++;
 
@@ -1794,6 +1823,7 @@ void UpdateCharacters(Character endereco){
 					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de descarregar comida!
+							endereco->energia -= endereco->tarefa->energianecessaria;
 
 							//Incrementar a quantidade de comida
 							comida += endereco->comida;
@@ -2229,6 +2259,8 @@ void DrawBonecoSelecionado(){
 		al_draw_text(textos,
 			WHITE, fundoX + 10, fundoY + 45, 0,
 			bonecoSelecionado->action);
+
+		al_draw_text(textos, WHITE, fundoX + 300, fundoY + 45,0, "energy %d",&bonecoSelecionado->energia);
 
 		//Desenhar erros / avisos
 		if (tempoTextoErro > 0){
