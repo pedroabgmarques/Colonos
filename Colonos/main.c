@@ -182,7 +182,7 @@ typedef struct character
 	int madeira; //Quantidade de madeira que o boneco transporta
 	int pedra; //Quantidade de pedra que o boneco transporta
 	int comida; //Quantidade de comida que o boneco transporta
-	int energia;
+	int energia;// energia para executar tarafes
 	char action[256]; //Acção que o colono está a fazer num determinado momento
 	bool tarefaIniciada; //Indica se a tarefa atual foi ou não iniciada
 }* Character;
@@ -1415,11 +1415,8 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->madeira = 0;
 	boneco->pedra = 0;
 	boneco->comida = 0;
-<<<<<<< HEAD
 	boneco->energia = 100;
-=======
 	boneco->tarefaIniciada = false;
->>>>>>> 8a53b90329fc05b13f4df633f66832b77b9ae60e
 	strcpy(boneco->action, "Idle");
 	return boneco;
 }
@@ -1551,6 +1548,8 @@ void BuildHouseTask(Character endereco, int house){
 void UpdateCharacters(Character endereco){
 
 	bonecoHovered = false;
+	
+	
 
 	if (endereco != NULL)
 	{
@@ -1662,12 +1661,11 @@ void UpdateCharacters(Character endereco){
 					//Verificar se o recurso ainda existe
 					if (FindForest(florestas, endereco->tarefa->x, endereco->tarefa->y)->phase == 0)
 					{
-						endereco->energia -= endereco->tarefa->energianecessaria;
-						printf(" recolha %d\n", endereco->energia);
+		
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de apanhar madeira!
-							
-							
+							endereco->energia -= endereco->tarefa->energianecessaria;
+							printf(" recolha %d\n", endereco->energia);
 
 							strcpy(endereco->action, "Walking to unload wood");
 
@@ -1703,7 +1701,7 @@ void UpdateCharacters(Character endereco){
 							char result[500];
 							sprintf(result, "%s%d%s", "Gathering wood (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 							strcpy(endereco->action, result);
-							endereco->energia -= endereco->tarefa->energianecessaria;
+							
 
 							endereco->tarefa->tempoExecucao++;
 							
@@ -1723,7 +1721,7 @@ void UpdateCharacters(Character endereco){
 						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 							//Acabamos de descarregar madeira!
 							//Decrementamos a energia do colono!
-							
+							endereco->energia -= endereco->tarefa->energianecessaria;
 							
 
 								//Incrementar a quantidade de madeira
@@ -1780,7 +1778,7 @@ void UpdateCharacters(Character endereco){
 							char result[500];
 							sprintf(result, "%s%d%s", "Unloading wood (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 							strcpy(endereco->action, result);
-							endereco->energia -= endereco->tarefa->energianecessaria;
+							
 							endereco->tarefa->tempoExecucao++;
 
 							
@@ -2411,8 +2409,9 @@ void DrawBonecoSelecionado(){
 		al_draw_text(textos,
 			WHITE, fundoX + 10, fundoY + 45, 0,
 			bonecoSelecionado->action);
-
-		al_draw_text(textos, WHITE, fundoX + 300, fundoY + 45,0, "energy %d",&bonecoSelecionado->energia);
+		char result[500];
+		sprintf(result, "%s%d%s", "Energy (", (&bonecoSelecionado->energia, "%)"));
+		al_draw_text(textos, WHITE, fundoX + 700, fundoY + 45, 0, result);
 
 		//Desenhar erros / avisos
 		if (tempoTextoErro > 0){
