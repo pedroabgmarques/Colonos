@@ -2440,8 +2440,8 @@ void DrawBonecoSelecionado(){
 		al_draw_text(textos,
 			WHITE, fundoX + 10, fundoY + 45, 0,
 			bonecoSelecionado->action);
-		char result[500];
-		sprintf(result, "%s%d%s", "Energy (", (&bonecoSelecionado->energia, "%)"));
+		char *result[500];
+		sprintf(result, "%s%d%s", "Energy (", bonecoSelecionado->energia, "%)");
 		al_draw_text(textos, WHITE, fundoX + 700, fundoY + 45, 0, result);
 
 		//Desenhar erros / avisos
