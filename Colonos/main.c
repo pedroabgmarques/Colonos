@@ -30,6 +30,7 @@ int saveUIactive = 0;//0 - desativada, 1 - activo
 int loadUIactive = 1;//0- desactivada, 1 - activo
 int quantidadeEdificios;
 int quantidadeColonos;
+int numeroTarefas;
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
 
@@ -49,6 +50,7 @@ ALLEGRO_BITMAP *tree1 = NULL;
 ALLEGRO_BITMAP *rock3 = NULL;
 ALLEGRO_BITMAP *rock2 = NULL;
 ALLEGRO_BITMAP *rock1 = NULL;
+ALLEGRO_BITMAP *soil = NULL;
 ALLEGRO_BITMAP *grass = NULL;
 ALLEGRO_BITMAP *chopped_trees = NULL;
 
@@ -109,7 +111,7 @@ int KBLimit = 5;
 int KBLimitCounter = 0;
 
 //Contadores de recursos
-int pedra = 100, madeira = 50, comida = 100;
+int pedra = 200, madeira = 200, comida = 100;
 int maxPedra = 300, maxMadeira = 300, maxComida = 300;
 
 //Textos de erro
@@ -125,7 +127,7 @@ typedef struct farm
 	int type; //Sprite do estado inicial
 	int i, j; //Posicao da quinta no mapa
 	int timer; //Contador de há quanto tempo a quinta está no estado atual
-	int phase; //Fase em que a quinta se encontra (1, 2, 3)
+	int phase; //Fase em que a quinta se encontra (0, 1, 2)
 	int minTimer; //Tempo necessário para passar para a próxima fase
 	char *name; //Nome descritivo do tipo de quinta
 	struct farm *next; //Apontador para o elemento seguinte
@@ -160,13 +162,10 @@ typedef struct tarefa
 	//8 - Descarregar Vegetais
 	//9 - Descansar
 	int type; //Tipo de tarefa
-	int energianecessaria;
+	float energianecessaria;
 	int x, y; //Coordenadas da tarefa a executar
 	int tempo, tempoExecucao;
-	struct building *building; //Apontador para o edificio da tarefa, se houver
 	struct tarefa * next; //Apontador para a proxima tarefa
-	int custoMadeira; //custo da tarefa em madeira
-	int custoPedra; //custo da tarefa em pedra
 }* Tarefa;
 
 //Descreve um bonequinho
@@ -184,9 +183,10 @@ typedef struct character
 	int madeira; //Quantidade de madeira que o boneco transporta
 	int pedra; //Quantidade de pedra que o boneco transporta
 	int comida; //Quantidade de comida que o boneco transporta
-	int energia;// energia para executar tarafes
+	float energia;// energia para executar tarafes
 	char action[256]; //Acção que o colono está a fazer num determinado momento
 	bool tarefaIniciada; //Indica se a tarefa atual foi ou não iniciada
+	float casaX, casaY; //Coordenadas da casa onde este colono mora
 }* Character;
 
 //Descreve um edificio
@@ -361,7 +361,7 @@ void ResetSearchNodes(){
 }
 
 //Insere uma tarefa numa lista de tarefas
-Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edificio, int custoMadeira, int custoPedra){
+Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y){
 	Tarefa tarefa = malloc(sizeof(struct tarefa));
 	tarefa->type = type;
 	tarefa->x = x;
@@ -437,14 +437,51 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 		tarefa->tempo = 7000;
 		tarefa->energianecessaria = 11;
 		break;
+	case 14:
+		//Construir Farmhouse
+		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 18;
+		break;
+	case 15:
+		//Plantar Milho
+		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
+		break;
+	case 16:
+		//Plantar Morango
+		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
+		break;
+	case 17:
+		//Plantar Pimento
+		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
+		break;
+	case 18:
+		//Plantar Batata
+		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
+		break;
+	case 19:
+		//Plantar Nabo
+		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
+		break;
+	case 20:
+		//Plantar Cenoura
+		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
+		break;
+	case 21:
+		//Plantar Beterraba
+		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
+		break;
 	default:
 		break;
 	}
 	tarefa->tempoExecucao = 0;
-	tarefa->building = edificio;
 	tarefa->next = listaTarefas;
-	tarefa->custoMadeira = custoMadeira;
-	tarefa->custoPedra = custoPedra;
 	return tarefa;
 }
 
@@ -540,18 +577,34 @@ Node RemoveNode(Node enderecoInicioLista, int x, int y){
 	}
 }
 
-Character RemoveCharacter(Character enderecoInicioLista, int x, int y){
+Character RemoveCharacter(Character enderecoInicioLista, Character boneco){
 	Character aux;
 	if (enderecoInicioLista != NULL){
 		//Lista não está vazia
-		if (enderecoInicioLista->x == x && enderecoInicioLista->y == y){
+		if (enderecoInicioLista->x == boneco->x 
+			&& enderecoInicioLista->y == boneco->y
+			&& enderecoInicioLista->action == boneco->action
+			&& enderecoInicioLista->animationFrame == boneco->animationFrame
+			&& enderecoInicioLista->animationTimer == boneco->animationTimer
+			&& enderecoInicioLista->comida == boneco->comida
+			&& enderecoInicioLista->direcao == boneco->direcao
+			&& enderecoInicioLista->energia == boneco->energia
+			&& enderecoInicioLista->madeira == boneco->madeira
+			&& enderecoInicioLista->movimento == boneco->movimento
+			&& enderecoInicioLista->next == boneco->next
+			&& enderecoInicioLista->path == boneco->path
+			&& enderecoInicioLista->pedra == boneco->pedra
+			&& enderecoInicioLista->spriteSheet == boneco->spriteSheet
+			&& enderecoInicioLista->tarefa == boneco->tarefa
+			&& enderecoInicioLista->tarefaIniciada == boneco->tarefaIniciada){
 			//encontramos o elemento a eliminar
 			aux = enderecoInicioLista->next;
+			enderecoInicioLista->next = NULL;
 			return aux;
 		}
 		else{
 			//não é este o elemento e eliminar, continuar a recursão
-			enderecoInicioLista->next = RemoveCharacter(enderecoInicioLista->next, x, y);
+			enderecoInicioLista->next = RemoveCharacter(enderecoInicioLista->next, boneco);
 			return enderecoInicioLista;
 		}
 	}
@@ -586,7 +639,7 @@ void UpdateSearchNodes(){
 			}
 
 			//Apenas é caminho se tiver 1 na segunda posição desta tile
-			if (mapDef[y][x][1] == 1 && mapDef[y][x][2] == 1){
+			if (mapDef[y][x][1] == 1){
 				node->caminho = true;
 				searchNodes[x][y] = node;
 			}
@@ -701,6 +754,19 @@ int ListCountHouseCharacters(Building edificios){
 			colonos = colonos->next;
 		}
 		listaEdificios = listaEdificios->next;
+	}
+	return contador;
+}
+
+//Conta os bonecos que estão numa casa
+int ListCountCharactersHouse(Building casa){
+	int contador = 0;
+	if (casa != NULL){
+		Character bonecos = casa->colonists;
+		while (bonecos != NULL){
+			contador++;
+			bonecos = bonecos->next;
+		}
 	}
 	return contador;
 }
@@ -1060,6 +1126,8 @@ void UpdateMap(){
 				break;
 			case 46: mapa[i][j] = house4;
 				break;
+			case 47: mapa[i][j] = soil;
+				break;
 			default:
 				mapa[i][j] = grass;
 				break;
@@ -1188,7 +1256,7 @@ Farm InsertFarm(Farm endereco, int j, int i, int type){
 	farm->type = type;
 	farm->next = endereco;
 	mapDef[i][j][0] = type;
-	mapDef[i][j][1] = 1; // Characters can walk over farms 
+	mapDef[i][j][1] = 0; // Characters can't walk over farms 
 	mapDef[i][j][2] = 0; // Can't build over farms
 	return farm;
 }
@@ -1310,18 +1378,58 @@ void UpdateFarms(Farm endereco){
 
 //Atualizar edificions
 void UpdateBuildings(Building endereco){
-	while (endereco != NULL){
-		if (endereco->constructionCounter < 32 && endereco->minTimer > 0){
+	Building aux = endereco;
+
+	while (aux != NULL){
+		if (aux->constructionCounter < 32 && aux->minTimer > 0){
 			//incrementar timer
-			endereco->timer += 1;
+			aux->timer += 1;
 			//passar fase?
-			if (endereco->timer > endereco->minTimer){
-				endereco->timer = 0;
-				endereco->constructionCounter++;
+			if (aux->timer > aux->minTimer){
+				aux->timer = 0;
+				aux->constructionCounter++;
 			}
 		}
-		endereco = endereco->next;
+
+		//Dar energia aos bonecos
+		Character aux2 = aux->colonists;
+		while (aux->colonists != NULL){
+			if (aux->colonists->energia <= 100){
+				aux->colonists->energia += 0.1;
+				printf("Energia: %f\n", aux->colonists->energia);
+			}
+			aux->colonists = aux->colonists->next;
+		}
+		aux->colonists = aux2;
+
+		Character listaBonecos = aux->colonists;
+		while (listaBonecos != NULL){
+
+			if (listaBonecos->energia > 100){
+
+				printf("Boneco pronto para sair de casa!\n");
+
+				aux->colonists = RemoveCharacter(aux->colonists, listaBonecos);
+
+				//Colocar o colono na lista de bonequinhos
+				listaBonecos->energia = 100;
+
+				//Aqui podia-se tentar manter a tarefa anterior..
+				listaBonecos->tarefa = NULL;
+
+				listaBonecos->next = bonequinhos;
+				bonequinhos = listaBonecos;
+				
+			}
+			if (listaBonecos != NULL){
+				listaBonecos = listaBonecos->next;
+			}
+		}
+
+		aux = aux->next;
 	}
+	
+
 }
 
 //Encontrar edificio numa determinada posicao
@@ -1348,6 +1456,18 @@ Opcao FindOpcao(Opcao listaOpcoes, char caracter){
 	return opcao;
 }
 
+Farm FindFarm(Farm listaQuintas, int x, int y){
+	Farm farm = NULL;
+	while (listaQuintas != NULL){
+		if (listaQuintas->i == x && listaQuintas->j == y && listaQuintas->phase == 2){
+			farm = listaQuintas;
+			break;
+		}
+		listaQuintas = listaQuintas->next;
+	}
+	return farm;
+}
+
 //Encontrar floresta numa determinada posicao
 Forest FindForest(Forest endereco, int i, int j){
 	Forest forest = NULL;
@@ -1367,6 +1487,19 @@ bool WarehouseBuilt(){
 		for (int j = 0; j < MAPHEIGHT; j++){
 			if (mapDef[i][j][0] == 43){
 				result = true;
+			}
+		}
+	}
+	return result;
+}
+
+//Verifica se existe pelo menos uma farmhouse
+bool FarmhouseBuilt(){
+	bool result = false;
+	for (int i = 0; i < MAPWIDTH; i++){
+		for (int j = 0; j < MAPHEIGHT; j++){
+			if (mapDef[i][j][0] == 47){
+				return true;
 			}
 		}
 	}
@@ -1414,7 +1547,7 @@ void DrawNoWalkConstructionTiles(){
 	}
 }
 
-Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, float y, int direcao, int movimento){
+Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, float y, int direcao, int movimento, float casaX, float casaY){
 	Character boneco = (Character)malloc(sizeof(struct character));
 	boneco->x = x;
 	boneco->y = y;
@@ -1431,6 +1564,8 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	boneco->comida = 0;
 	boneco->energia = 20;
 	boneco->tarefaIniciada = false;
+	boneco->casaX = casaX;
+	boneco->casaY = casaY;
 	strcpy(boneco->action, "Idle");
 	return boneco;
 }
@@ -1489,6 +1624,7 @@ int XHeadQuarters(){
 			}
 		}
 	}
+	return 0;
 }
 
 //Devolve a posicao Y do edificio headquarters
@@ -1499,6 +1635,26 @@ int YHeadQuarters(){
 				return j;
 			}
 		}
+	}
+	return 0;
+}
+
+void VerificarEnergia(Character endereco){
+	if (endereco->energia <= 20)
+	{
+
+		endereco->path = NULL;
+		//endereco->tarefa = NULL;
+
+		endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), endereco->casaY, endereco->casaX + 1);
+		endereco->tarefa = InsertTarefa(endereco->tarefa, 0, endereco->casaX, endereco->casaY);
+
+		printf("Inserida tarefa de ir para casa\n");
+		printf("x: %d\n", endereco->x);
+		printf("y: %d\n", endereco->y);
+		printf("\n\n");
+
+		strcpy(endereco->action, "Walking home to rest");
 	}
 }
 
@@ -1528,6 +1684,43 @@ void setTextoErro(char texto[256]){
 	tempoTextoErro = 200;
 }
 
+void PlantFarmTask(Character endereco, int farm){
+	if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+		//Acabamos de plantar uma quinta!
+		endereco->energia -= endereco->tarefa->energianecessaria;
+
+		strcpy(endereco->action, "Idle");
+
+		endereco->tarefaIniciada = false;
+
+		int x = endereco->tarefa->x;
+		int y = endereco->tarefa->y;
+
+		//Inserir plantação
+		quintas = InsertFarm(quintas, x, y, farm);
+
+		//Remover a tarefa atual
+		endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+		VerificarEnergia(endereco);
+
+	}
+	else{
+		//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+
+		if (!endereco->tarefaIniciada){
+			endereco->tarefaIniciada = true;
+		}
+
+		char result[500];
+		sprintf(result, "%s%d%s", "Planting (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+		strcpy(endereco->action, result);
+
+		endereco->tarefa->tempoExecucao++;
+
+	}
+}
+
 void BuildHouseTask(Character endereco, int house){
 	if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 		//Acabamos de construir uma casa!
@@ -1536,31 +1729,67 @@ void BuildHouseTask(Character endereco, int house){
 		strcpy(endereco->action, "Idle");
 
 		endereco->tarefaIniciada = false;
+
+		int x = endereco->tarefa->x;
+		int y = endereco->tarefa->y;
+
 		//Remover a tarefa atual
 		endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
-		//Gerar dois bonecos no fim do mapa
-		Character boneco = InsertCharacter(bonequinhos, woman1, WorldToPixel(MAPWIDTH - 1, 0), WorldToPixel(4, 1), 2, 1);
-		boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
-		bonequinhos = boneco;
+		//Gerar dois bonecos no fim do mapa, se for uma casa
+		if (house != 37){
+			Character boneco = InsertCharacter(bonequinhos, woman1, WorldToPixel(MAPWIDTH - 1, 0), WorldToPixel(4, 1), 2, 1, x, y);
+			boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
+			bonequinhos = boneco;
 
-		boneco = InsertCharacter(bonequinhos, men1, WorldToPixel(MAPWIDTH - 1, 0), WorldToPixel(10, 1), 2, 1);
-		boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
-		bonequinhos = boneco;
+			boneco = InsertCharacter(bonequinhos, men1, WorldToPixel(MAPWIDTH - 1, 0), WorldToPixel(10, 1), 2, 1, x, y);
+			boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
+			bonequinhos = boneco;
+		}
+
+		//Se for farmhouse, colocar os terrenos de plantação
+		if (house == 37){
+			mapDef[y + 1][x][0] = 47;
+			mapDef[y + 1][x][1] = 0;
+			mapDef[y + 1][x][2] = 0;
+
+			mapDef[y + 1][x + 1][0] = 47;
+			mapDef[y + 1][x + 1][1] = 0;
+			mapDef[y + 1][x + 1][2] = 0;
+
+			mapDef[y + 2][x][0] = 47;
+			mapDef[y + 2][x][1] = 0;
+			mapDef[y + 2][x][2] = 0;
+
+			mapDef[y + 2][x + 1][0] = 47;
+			mapDef[y + 2][x + 1][1] = 0;
+			mapDef[y + 2][x + 1][2] = 0;
+		}
+
+		VerificarEnergia(endereco);
+		
 
 	}
 	else{
 		//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
 
 		if (!endereco->tarefaIniciada){
-			edificios = InsertBuilding(edificios, endereco->tarefa->x, endereco->tarefa->y, house);
-			madeira -= endereco->tarefa->custoMadeira;
-			pedra -= endereco->tarefa->custoPedra;
+
+			if (house == 37){
+				//Farmhouse
+				edificios = InsertBuilding(edificios, endereco->tarefa->x, endereco->tarefa->y, 37);
+				edificios = InsertBuilding(edificios, endereco->tarefa->x + 1, endereco->tarefa->y, 38);
+			}
+			else{
+				//Casas
+				edificios = InsertBuilding(edificios, endereco->tarefa->x, endereco->tarefa->y, house);
+			}
+			
 			endereco->tarefaIniciada = true;
 		}
 
 		char result[500];
-		sprintf(result, "%s%d%s", "Bulding House (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+		sprintf(result, "%s%d%s", "Building (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 		strcpy(endereco->action, result);
 
 		endereco->tarefa->tempoExecucao++;
@@ -1572,8 +1801,6 @@ void BuildHouseTask(Character endereco, int house){
 void UpdateCharacters(Character endereco){
 
 	bonecoHovered = false;
-	
-	
 
 	if (endereco != NULL)
 	{
@@ -1659,25 +1886,28 @@ void UpdateCharacters(Character endereco){
 				{
 				case 0:
 					//IR PARA CASA
-					//Remover este boneco da lista de bonecos
-					//Remover da lista de bonecos
-					bonequinhos = RemoveCharacter(bonequinhos, endereco->x, endereco->y);
-					//Adicionar este boneco à lista da casa
-					Building edificio = endereco->tarefa->building;
+
+					if (bonequinhos != NULL){
+						bonequinhos = RemoveCharacter(bonequinhos, endereco);
+					}
+					
+				    Building edificio = FindBuilding(edificios, endereco->casaX, endereco->casaY);
 					Character colono = edificio->colonists;
 					endereco->next = colono;
 					edificio->colonists = endereco;
-					//Remover a tarefa
-					endereco->tarefa = NULL;
 
-					/*Remover o boneco selecionado*/
+					//Retirar comida
+					comida -= 10;
+
+					//Remover o boneco selecionado
 					if (bonecoSelecionado != NULL){
 						if (endereco->x == bonecoSelecionado->x && endereco->y == bonecoSelecionado->y){
 							bonecoSelecionado = NULL;
 						}
 					}
-					
-					
+
+					endereco = bonequinhos;
+
 					break;
 				case 1:
 					//Apanhar madeira
@@ -1709,7 +1939,7 @@ void UpdateCharacters(Character endereco){
 
 							//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
 							//Vamos descarregar madeira!
-							endereco->tarefa = InsertTarefa(endereco->tarefa, 2, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+							endereco->tarefa = InsertTarefa(endereco->tarefa, 2, enderecoTarefaX, enderecoTarefaY);
 
 							printf("Inserida tarefa para descarregar madeira\n");
 							printf("x: %d\n", enderecoTarefaX);
@@ -1774,7 +2004,7 @@ void UpdateCharacters(Character endereco){
 									{
 
 										if (FazerBonecoAndarVizinho(endereco, enderecoTarefaX, enderecoTarefaY)){
-											endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+											endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY);
 
 											printf("Inserida tarefa para apanhar madeira\n");
 											printf("x: %d\n", enderecoTarefaX);
@@ -1799,6 +2029,8 @@ void UpdateCharacters(Character endereco){
 									setTextoErro("Can't store/gather any more wood!");
 									strcpy(endereco->action, "Idle");
 								}
+
+								VerificarEnergia(endereco);
 
 						}
 						else{
@@ -1830,7 +2062,7 @@ void UpdateCharacters(Character endereco){
 
 						//Inserir a tarefa de descarregar madeira, guardando o x, y em que estavamos a apanhar
 						//Vamos descarregar pedra!
-						endereco->tarefa = InsertTarefa(endereco->tarefa, 4, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL, 0, 0);
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 4, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1));
 
 					}
 					else{
@@ -1873,12 +2105,14 @@ void UpdateCharacters(Character endereco){
 
 								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
 								strcpy(endereco->action, "Walking to gather stone");
-								endereco->tarefa = InsertTarefa(endereco->tarefa, 3, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+								endereco->tarefa = InsertTarefa(endereco->tarefa, 3, enderecoTarefaX, enderecoTarefaY);
 							}
 							else{
 								setTextoErro("Can't store/gather any more stone!");
 								strcpy(endereco->action, "Idle");
 							}
+
+							VerificarEnergia(endereco);
 
 						}
 						else{
@@ -1897,7 +2131,7 @@ void UpdateCharacters(Character endereco){
 						//Acabamos de apanhar comida!
 						endereco->energia -= endereco->tarefa->energianecessaria;
 
-						strcpy(endereco->action, "Walking to unload food");
+						strcpy(endereco->action, "Walking to unload fish");
 						
 
 						endereco->comida += 5;
@@ -1910,14 +2144,14 @@ void UpdateCharacters(Character endereco){
 
 						//Inserir a tarefa de descarregar comida, guardando o x, y em que estavamos a apanhar
 						//Vamos descarregar comida!
-						endereco->tarefa = InsertTarefa(endereco->tarefa, 6, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), NULL, 0, 0);
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 6, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1));
 
 					}
 					else{
 						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
 
 						char result[500];
-						sprintf(result, "%s%d%s", "Gathering food (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+						sprintf(result, "%s%d%s", "Fishing (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 						strcpy(endereco->action, result);
 						
 
@@ -1950,26 +2184,96 @@ void UpdateCharacters(Character endereco){
 								//Mandar o boneco para o local onde estava a apanhar comida
 								endereco->path = FindPath(PixelToWorld(enderecoX, 0), PixelToWorld(enderecoY, 1), enderecoTarefaX, enderecoTarefaY);
 
-								//Inserir a tarefa de apanhar madeira, guardando o x, y em que estavamos a apanhar
-								strcpy(endereco->action, "Walking to gather comida");
-								endereco->tarefa = InsertTarefa(endereco->tarefa, 5, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+								//Inserir a tarefa de apanhar peixe, guardando o x, y em que estavamos a apanhar
+								strcpy(endereco->action, "Walking to fish");
+								endereco->tarefa = InsertTarefa(endereco->tarefa, 5, enderecoTarefaX, enderecoTarefaY);
 							}
 							else{
-								setTextoErro("Can't store/gather any more comida!");
+								setTextoErro("Can't store/gather any more food!");
 								strcpy(endereco->action, "Idle");
 							}
+
+							VerificarEnergia(endereco);
 
 						}
 						else{
 							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
 							char result[500];
-							sprintf(result, "%s%d%s", "Unloading food (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+							sprintf(result, "%s%d%s", "Unloading fish (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 							strcpy(endereco->action, result);
 							endereco->tarefa->tempoExecucao++;
 						}
 					}
 
+
+				case 7:
+					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+						//Acabamos de apanhar vegetais!
+						endereco->energia -= endereco->tarefa->energianecessaria;
+
+						strcpy(endereco->action, "Walking to unload vegetables");
+
+						endereco->comida += 35;
+
+						//Mandar o boneco para o headquarters
+						endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
+
+						//Remover a tarefa atual
+						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+						//Inserir a tarefa de descarregar vegetais, guardando o x, y em que estavamos a apanhar
+						//Vamos descarregar comida!
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 6, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1));
+
+					}
+					else{
+						//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+
+						char result[500];
+						sprintf(result, "%s%d%s", "Gathering vegetables (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+						strcpy(endereco->action, result);
+
+
+						endereco->tarefa->tempoExecucao++;
+
+					}
 					break;
+				case 8:
+					//Descarregar vegetais
+					if ((PixelToWorld(endereco->x, 0) == XHeadQuarters() || PixelToWorld(endereco->x, 0) == XHeadQuarters() + 1) && PixelToWorld(endereco->y, 1) == YHeadQuarters() + 1){
+						if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
+							//Acabamos de descarregar vegetais!
+							endereco->energia -= endereco->tarefa->energianecessaria;
+
+							//Incrementar a quantidade de comida
+							comida += endereco->comida;
+							//Retirar os vegetais que o boneco carregava
+							endereco->comida = 0;
+
+							int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
+							enderecoX = endereco->x;
+							enderecoY = endereco->y;
+							enderecoTarefaX = endereco->tarefa->x;
+							enderecoTarefaY = endereco->tarefa->y;
+							//Remover a tarefa atual
+							endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+
+							strcpy(endereco->action, "Idle");
+							
+							VerificarEnergia(endereco);
+
+						}
+						else{
+							//printf("Tempo de execucao: %d\n", endereco->tarefa->tempoExecucao);
+							char result[500];
+							sprintf(result, "%s%d%s", "Unloading vegetables (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+							strcpy(endereco->action, result);
+							endereco->tarefa->tempoExecucao++;
+						}
+					}
+					break;
+
+
 				case 10:
 					//Build House 1
 					BuildHouseTask(endereco, 39);
@@ -1986,16 +2290,54 @@ void UpdateCharacters(Character endereco){
 					//Build House 1
 					BuildHouseTask(endereco, 46);
 					break;
+				case 14:
+					//Build Farmhouse
+					BuildHouseTask(endereco, 37);
+					break;
+				case 15:
+					//Plantar Milho
+					PlantFarmTask(endereco, 32);
+					break;
+				case 16:
+					//Plantar Morango
+					PlantFarmTask(endereco, 29);
+					break;
+				case 17:
+					//Plantar Pimento
+					PlantFarmTask(endereco, 26);
+					break;
+				case 18:
+					//Plantar Batata
+					PlantFarmTask(endereco, 23);
+					break;
+				case 19:
+					//Plantar Nabo
+					PlantFarmTask(endereco, 20);
+					break;
+				case 20:
+					//Plantar Cenoura
+					PlantFarmTask(endereco, 17);
+					break;
+				case 21:
+					//Plantar Beterraba
+					PlantFarmTask(endereco, 14);
+					break;
 				default:
 					break;
 				}
 				
 			}
 		}
+<<<<<<< HEAD
 		if (endereco->next != NULL){
+=======
+		
+
+		if (endereco != NULL){
+>>>>>>> ddcca2bc71bad79573673722a2673a63b1b582bc
 			UpdateCharacters(endereco->next);
 		}
-	
+		
 	}
 }
 
@@ -2037,8 +2379,19 @@ void DrawHoveredTile(){
 	x = (round(mouseState.x / TILEWIDTH)  * TILEWIDTH);
 	y = (round(mouseState.y / TILEHEIGHT)  * TILEHEIGHT);
 
-	al_draw_rectangle(x, y, x + TILEWIDTH, y + TILEHEIGHT,
-		GREEN, 2);
+	if (opcaoAtiva != NULL && opcaoAtiva->tecla == 'f'){
+		//Farmhouse
+		al_draw_rectangle(x, y, x + TILEWIDTH * 3, y + TILEHEIGHT,
+			GREEN, 2);
+		al_draw_rectangle(x - TILEWIDTH, y + TILEHEIGHT, x + TILEWIDTH * 3, y + TILEHEIGHT * 3,
+			GREEN, 2);
+	}
+	else{
+		//Normal
+		al_draw_rectangle(x, y, x + TILEWIDTH, y + TILEHEIGHT,
+			GREEN, 2);
+	}
+
 }
 
 //Verifica se existe colisão entre duas bounding boxes
@@ -2163,16 +2516,49 @@ void DrawBuildingHover(Building edificios){
 	}
 }
 
-void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int tarefa, int custoMadeira, int custoPedra){
+void BuildFarmClick(Character bonecoSelecionado, int xi, int yi, int tarefa){
+	//Plantar cenas
+
+	//Verificar se podemos plantar neste espaço
+	if (mapDef[yi][xi][0] == 47){
+		//Terra vazia, podemos plantar
+		//Encontrar um vizinho em que se possa andar
+		bonecoSelecionado->path = NULL;
+		if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
+			opcaoAtiva = NULL;
+			bonecoSelecionado->tarefa = NULL;
+			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi);
+
+			printf("Inserida tarefa para plantar\n");
+			printf("x: %d\n", xi);
+			printf("y: %d\n", yi);
+			printf("\n\n");
+
+			strcpy(bonecoSelecionado->action, "Walking to plant a farm");
+			bonecoSelecionado = NULL;
+		}
+		else{
+			setTextoErro("Can't reach farm!");
+		}
+	}
+	else{
+		setTextoErro("Can't plant in that space!");
+	}
+}
+
+void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int tarefa){
 	//Construir uma casa
 
 	//Verificar se se pode construir neste espaço
 	if (mapDef[yi][xi][2] == 1 && FindBuilding(edificios, yi, xi) == NULL){
+		bonecoSelecionado->path = NULL;
 		//Encontrar um vizinho em que se possa andar
 		if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 			//Limpar tarefas que tenha a criar uma nova TODO: free???
 			bonecoSelecionado->tarefa = NULL;
-			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi, NULL, custoMadeira, custoPedra);
+			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi);
+
+			mapDef[yi][xi][2] = 0;
 
 			printf("Inserida tarefa para construir casa\n");
 			printf("x: %d\n", xi);
@@ -2208,6 +2594,9 @@ void ProcessMouseClicks(Character bonequinhos){
 
 			//Adicionar opção de construir
 			opcoes = NULL;
+			if (FarmhouseBuilt()){
+				opcoes = InsertOption(opcoes, 'p', "Plant", 0, 0);
+			}
 			opcoes = InsertOption(opcoes, 'b', "Build", 0, 0);
 
 			edificioSelecionado = NULL;
@@ -2239,10 +2628,10 @@ void ProcessMouseClicks(Character bonequinhos){
 					tarefa->type = 0;
 					tarefa->x = PixelToWorld(x - offsetX, 0);
 					tarefa->y = PixelToWorld(y - offsetY, 1) + 1;
-					tarefa->building = aux;
 					bonecoSelecionado->tarefa = tarefa;
 					continuar = false;
 					bonecoSelecionado = NULL;
+					opcaoAtiva = NULL;
 
 					break;
 				}
@@ -2266,6 +2655,35 @@ void ProcessMouseClicks(Character bonequinhos){
 
 			aux = aux->next;
 		}
+
+		if (continuar){
+			//Verificar se estamos a clicar numa quinta com vegetais maduros
+			int xi = PixelToWorld((x / TILEWIDTH) * TILEWIDTH - offsetX, 0);
+			int yi = PixelToWorld((y / TILEHEIGHT) * TILEHEIGHT - offsetY, 1);
+
+			Farm farm = FindFarm(quintas, xi, yi);
+			if (farm != NULL){
+				//Encontrar um vizinho em que se possa andar
+				if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
+					//Limpar tarefas que tenha a criar uma nova TODO: free???
+					bonecoSelecionado->tarefa = NULL;
+					bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 7, xi, yi);
+
+					printf("Inserida tarefa para colher vegetais\n");
+					printf("x: %d\n", xi);
+					printf("y: %d\n", yi);
+					printf("\n\n");
+
+					strcpy(bonecoSelecionado->action, "Walking to pick vegetables");
+					bonecoSelecionado = NULL;
+					opcaoAtiva = NULL;
+					continuar = false;
+				}
+				else{
+					setTextoErro("Can't reach farm!");
+				}
+			}
+		}
 	
 
 		if (continuar){
@@ -2279,16 +2697,115 @@ void ProcessMouseClicks(Character bonequinhos){
 				switch (opcaoAtiva->tecla)
 				{
 				case '1':
-					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 10, opcaoAtiva->madeira, opcaoAtiva->pedra);
+					madeira -= opcaoAtiva->madeira;
+					pedra -= opcaoAtiva->pedra;
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 10);
+					
 					break;
 				case '2':
-					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 11, opcaoAtiva->madeira, opcaoAtiva->pedra);
+					madeira -= opcaoAtiva->madeira;
+					pedra -= opcaoAtiva->pedra;
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 11);
+					
 					break;
 				case '3':
-					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 12, opcaoAtiva->madeira, opcaoAtiva->pedra);
+					madeira -= opcaoAtiva->madeira;
+					pedra -= opcaoAtiva->pedra;
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 12);
+					
 					break;
 				case '4':
-					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 13, opcaoAtiva->madeira, opcaoAtiva->pedra);
+					madeira -= opcaoAtiva->madeira;
+					pedra -= opcaoAtiva->pedra;
+					BuildHouseSpaceClick(bonecoSelecionado, xi, yi, 13);
+					
+					break;
+
+				case 'l':
+					BuildFarmClick(bonecoSelecionado, xi, yi, 15);
+					break;
+				case 'o':
+					BuildFarmClick(bonecoSelecionado, xi, yi, 16);
+					break;
+				case 'i':
+					BuildFarmClick(bonecoSelecionado, xi, yi, 17);
+					break;
+				case 'a':
+					BuildFarmClick(bonecoSelecionado, xi, yi, 18);
+					break;
+				case 'n':
+					BuildFarmClick(bonecoSelecionado, xi, yi, 19);
+					break;
+				case 'c':
+					BuildFarmClick(bonecoSelecionado, xi, yi, 20);
+					break;
+				case 't':
+					BuildFarmClick(bonecoSelecionado, xi, yi, 21);
+					break;
+
+				case 'f':
+					//Farmhouse
+					if (
+						//Edificio da farmhouse
+						mapDef[yi][xi][2] == 1 && FindBuilding(edificios, yi, xi) == NULL
+						&& mapDef[yi][xi + 1][2] == 1 && FindBuilding(edificios, yi, xi + 1) == NULL
+
+						//Terreno superior esquerdo + margem esquerda
+						&& mapDef[yi + 1][xi][2] == 1 && FindBuilding(edificios, yi + 1, xi) == NULL
+						&& mapDef[yi + 1][xi - 1][2] == 1 && FindBuilding(edificios, yi + 1, xi) == NULL
+
+						//Terreno superior direito + margem direita
+						&& mapDef[yi + 1][xi + 1][2] == 1 && FindBuilding(edificios, yi + 1, xi + 1) == NULL
+						&& mapDef[yi + 1][xi + 2][2] == 1 && FindBuilding(edificios, yi + 1, xi + 1) == NULL
+
+						//Terreno inferior esquerdo + margem esquerda
+						&& mapDef[yi + 2][xi][2] == 1 && FindBuilding(edificios, yi + 2, xi) == NULL
+						&& mapDef[yi + 2][xi - 1][2] == 1 && FindBuilding(edificios, yi + 2, xi) == NULL
+
+						//Terreno inferior direito + margem direita
+						&& mapDef[yi + 2][xi + 1][2] == 1 && FindBuilding(edificios, yi + 2, xi + 1) == NULL
+						&& mapDef[yi + 2][xi + 2][2] == 1 && FindBuilding(edificios, yi + 2, xi + 1) == NULL
+
+						//Espaço para o trabalhador
+						&& mapDef[yi][xi + 2][2] == 1 && FindBuilding(edificios, yi, xi + 2) == NULL
+						){
+						//Encontrar um vizinho em que se possa andar
+						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi + 1, yi)){
+							//Limpar tarefas que tenha a criar uma nova TODO: free???
+							bonecoSelecionado->tarefa = NULL;
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 14, xi, yi);
+
+							mapDef[yi][xi][2] = 0;
+							mapDef[yi][xi + 1][2] = 0;
+							mapDef[yi + 1][xi][2] = 0;
+							mapDef[yi + 1][xi - 1][2] = 0;
+							mapDef[yi + 1][xi + 1][2] = 0;
+							mapDef[yi + 1][xi + 2][2] = 0;
+							mapDef[yi + 2][xi][2] = 0;
+							mapDef[yi + 2][xi - 1][2] = 0;
+							mapDef[yi + 2][xi + 1][2] = 0;
+							mapDef[yi + 2][xi + 2][2] = 0;
+
+							printf("Inserida tarefa para construir Farmhouse\n");
+							printf("x: %d\n", xi);
+							printf("y: %d\n", yi);
+							printf("\n\n");
+
+							strcpy(bonecoSelecionado->action, "Walking to build Farmhouse");
+							bonecoSelecionado = NULL;
+							opcaoAtiva = NULL;
+
+							madeira -= 160;
+							pedra -= 200;
+						}
+						else{
+							setTextoErro("Can't reach space!");
+						}
+					}
+					else{
+						//Não pode ser construido aqui
+						setTextoErro("Can't build in that space!");
+					}
 					break;
 				default:
 					break;
@@ -2300,6 +2817,7 @@ void ProcessMouseClicks(Character bonequinhos){
 				bonecoSelecionado->path = FindPath(PixelToWorld(bonecoSelecionado->x, 0), PixelToWorld(bonecoSelecionado->y, 1), PixelToWorld(x - offsetX, 0), PixelToWorld(y - offsetY, 1));
 				strcpy(bonecoSelecionado->action, "Walking");
 				bonecoSelecionado->tarefa = NULL;
+				opcaoAtiva = NULL;
 				if (bonecoSelecionado->path != NULL){
 					bonecoSelecionado = NULL;
 				}
@@ -2353,7 +2871,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
-							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi, NULL, 0, 0);
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 1, xi, yi);
 
 							printf("Inserida tarefa para apanhar madeira\n");
 							printf("x: %d\n", xi);
@@ -2384,7 +2902,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
-							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi, NULL, 0, 0);
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 3, xi, yi);
 							strcpy(bonecoSelecionado->action, "Walking to gather stone");
 							continuar = false;
 							bonecoSelecionado = NULL;
@@ -2409,7 +2927,7 @@ void ProcessMouseClicks(Character bonequinhos){
 						if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
-							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 5, xi, yi, NULL, 0, 0);
+							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 5, xi, yi);
 							strcpy(bonecoSelecionado->action, "Walking to gather food");
 							continuar = false;
 							bonecoSelecionado = NULL;
@@ -2448,8 +2966,8 @@ void DrawBonecoSelecionado(){
 		al_draw_text(textos,
 			WHITE, fundoX + 10, fundoY + 45, 0,
 			bonecoSelecionado->action);
-		char *result[500];
-		sprintf(result, "%s%d%s", "Energy (", bonecoSelecionado->energia, "%)");
+		char result[500];
+		sprintf(result, "%s%d%s", "Energy (", (int)bonecoSelecionado->energia, "%)");
 		al_draw_text(textos, WHITE, fundoX + 700, fundoY + 45, 0, result);
 
 		//Desenhar erros / avisos
@@ -2613,7 +3131,28 @@ int contarColonos()
 		numColonos++;
 		aux = aux->next;
 	}
-	return (numColonos - 2);
+	return (numColonos-2);
+}
+//contar numero de tarefas de um colono
+int contarTarefas(Tarefa endereco)
+{
+	int contador = 0;
+	while (endereco != NULL)
+	{
+		contador++;
+		endereco = endereco->next;
+	}
+	return contador;
+}
+//remover tarefas antes de guardar
+void removerTarefas(Character endereco)
+{
+	
+		endereco->tarefa = NULL;
+		strcpy(endereco->action, "Idle");
+
+		
+
 }
 //Guardar estado actual do mapa
 void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
@@ -2656,8 +3195,13 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 		quantidadeColonos = contarColonos();
 		fprintf(data, "%d\n", quantidadeColonos);
 		Character colonosAux = bonequinhos;
+		
+		
 		while (colonosAux != NULL)
 		{
+			removerTarefas(colonosAux);
+			removerTarefas(bonequinhos);
+			
 			fprintf(data, "%s\n", colonosAux->action);
 //bug			fprintf(data, "%d\n", colonosAux->animationFrame);
 //bug			fprintf(data, "%s\n", colonosAux->animationTimer);
@@ -2670,7 +3214,12 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 			
 			fprintf(data, "%d\n", PixelToWorld(colonosAux->x,0));
 			fprintf(data, "%d\n", PixelToWorld(colonosAux->y,1));
+			//guardar as tarefas de cada colono
+			
+			
+			
 			colonosAux = colonosAux->next;
+			
 		}
 		fclose(data);
 	
@@ -2730,6 +3279,11 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 		fscanf(data, "%d", &quantidadeColonos);
 		Character CharAux = bonequinhos;
 		int posicaoX=0,posicaoY=0;
+		Tarefa tarefaAux = bonequinhos->tarefa;
+		int tipoTarefa = 0;
+		int procurarBuildingX = 0,procurarBuildingY;
+		int man = 0;
+		Building buildingPesquisado = NULL;
 		for (int j = 0; j < 2; j++)
 		{
 			fscanf(data, "%s\n", &bonequinhos->action);
@@ -2745,13 +3299,22 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 			fscanf(data, "%d\n", &posicaoY);
 			bonequinhos->x = WorldToPixel(posicaoX, 0);
 			bonequinhos->y = WorldToPixel(posicaoY, 1);
-
+			
 			bonequinhos = bonequinhos->next;
 		}
 		bonequinhos = CharAux;
 		while (quantidadeColonos > 0)
 		{
-			bonequinhos=InsertCharacter(bonequinhos, men1, 0, 0, 0, 0);
+			if (man == 1)
+			{
+				bonequinhos = InsertCharacter(bonequinhos, woman1, 0, 0, 0, 0, 0, 0);
+				man = 0;
+			}
+			else
+			{
+				bonequinhos = InsertCharacter(bonequinhos, men1, 0, 0, 0, 0, 0, 0);
+				man = 1;
+			}
 			fscanf(data, "%s\n", &bonequinhos->action);
 			//bug			fprintf(data, "%d\n", colonosAux->animationFrame);
 			//bug			fprintf(data, "%s\n", colonosAux->animationTimer);
@@ -2761,8 +3324,10 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 			fscanf(data, "%d\n", &bonequinhos->movimento);
 			fscanf(data, "%d\n", &bonequinhos->pedra);
 			//fprintf(data, "%s\n", colonosAux->spriteSheet);
-			fscanf(data, "%f\n", &bonequinhos->x);
-			fscanf(data, "%f\n", &bonequinhos->y);
+			fscanf(data, "%d\n", &posicaoX);
+			fscanf(data, "%d\n", &posicaoY);
+			bonequinhos->x = WorldToPixel(posicaoX, 0);
+			bonequinhos->y = WorldToPixel(posicaoY, 1);
 			quantidadeColonos--;
 		}
 		fclose(data);
@@ -2794,6 +3359,7 @@ void UpdateInput(){
 			}
 		}
 	}
+
 	//se pressionar mos "y" na UI de save game, guarda o map e sai
 	if (saveUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_Y))
 	{
@@ -2836,6 +3402,16 @@ void UpdateInput(){
 				offsetY += TILEHEIGHT;
 		}
 
+		//CHEATS
+		if (al_key_down(&state, ALLEGRO_KEY_F1))
+		{
+			madeira += 50;
+		}
+		if (al_key_down(&state, ALLEGRO_KEY_F2))
+		{
+			pedra += 50;
+		}
+
 		//Percorrer a lista de opções e executar opções premidas
 		Opcao aux = opcoes;
 		while (aux != NULL){
@@ -2858,7 +3434,7 @@ void UpdateInput(){
 								aux->next = bonequinhos;
 								bonequinhos = aux;
 								//Remover o colono da lista de colonos nesta casa
-								edificioSelecionado->colonists = RemoveCharacter(edificioSelecionado->colonists, edificioSelecionado->colonists->x, edificioSelecionado->colonists->y);
+								edificioSelecionado->colonists = RemoveCharacter(edificioSelecionado->colonists, edificioSelecionado->colonists);
 								//Passar para o proximo colono da casa
 								edificioSelecionado->colonists = next;
 							}
@@ -2894,6 +3470,87 @@ void UpdateInput(){
 
 					break;
 
+				case 'f':
+					//Opção "Build" -> "Farmhouse"
+					if (al_key_down(&state, ALLEGRO_KEY_F)){
+						opcoes = NULL;
+						opcaoAtiva = InsertOption(opcaoAtiva, 'f', "build Farmhouse", 160, 200);
+						opcoes = NULL;
+					}
+
+					break;
+
+				case 'p':
+					//Opção "Plant"
+					if (al_key_down(&state, ALLEGRO_KEY_P)){
+						opcoes = NULL;
+						//Tipos de plantações
+						opcoes = InsertOption(opcoes, 'l', "Milho", 0, 0);
+						opcoes = InsertOption(opcoes, 'o', "Morango", 0, 0);
+						opcoes = InsertOption(opcoes, 'i', "Pimento", 0, 0);
+						opcoes = InsertOption(opcoes, 'a', "Batata", 0, 0);
+						opcoes = InsertOption(opcoes, 'n', "Nabo", 0, 0);
+						opcoes = InsertOption(opcoes, 'c', "Cenoura", 0, 0);
+						opcoes = InsertOption(opcoes, 't', "Beterraba", 0, 0);
+					}
+					break;
+
+				case 'l':
+					//Milho
+					if (al_key_down(&state, ALLEGRO_KEY_L)){
+						opcaoAtiva = InsertOption(opcaoAtiva, 'l', "plantar Milho", 0, 0);
+						opcoes = NULL;
+					}
+					break;
+
+				case 'o':
+					//Morango
+					if (al_key_down(&state, ALLEGRO_KEY_O)){
+						opcaoAtiva = InsertOption(opcaoAtiva, 'o', "plantar Morango", 0, 0);
+						opcoes = NULL;
+					}
+					break;
+
+				case 'i':
+					//Pimento
+					if (al_key_down(&state, ALLEGRO_KEY_I)){
+						opcaoAtiva = InsertOption(opcaoAtiva, 'i', "plantar Pimento", 0, 0);
+						opcoes = NULL;
+					}
+					break;
+
+				case 'a':
+					//Batata
+					if (al_key_down(&state, ALLEGRO_KEY_A)){
+						opcaoAtiva = InsertOption(opcaoAtiva, 'a', "plantar Batata", 0, 0);
+						opcoes = NULL;
+					}
+					break;
+
+				case 'n':
+					//Nabo
+					if (al_key_down(&state, ALLEGRO_KEY_N)){
+						opcaoAtiva = InsertOption(opcaoAtiva, 'n', "plantar Nabo", 0, 0);
+						opcoes = NULL;
+					}
+					break;
+
+				case 'c':
+					//Cenoura
+					if (al_key_down(&state, ALLEGRO_KEY_C)){
+						opcaoAtiva = InsertOption(opcaoAtiva, 'c', "plantar Cenoura", 0, 0);
+						opcoes = NULL;
+					}
+					break;
+
+				case 't':
+					//Baterraba
+					if (al_key_down(&state, ALLEGRO_KEY_T)){
+						opcaoAtiva = InsertOption(opcaoAtiva, 't', "plantar Beterraba", 0, 0);
+						opcoes = NULL;
+					}
+					break;
+
 				case '1':
 					//Casa 1
 					if (al_key_down(&state, ALLEGRO_KEY_1)){
@@ -2922,6 +3579,7 @@ void UpdateInput(){
 						opcoes = NULL;
 					}
 					break;
+
 
 				default:
 					break;
@@ -3006,8 +3664,8 @@ void LoadInitialState(){
 	florestas = InsertForest(florestas, 5, 5, 8);
 
 	//Bonequinhos iniciais
-	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(10, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1, edificios->x, edificios->y);
+	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(5, 1), 2, 1, edificios->x, edificios->y);
 	//bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(12, 0), WorldToPixel(5, 1), 2, 1);
 	//bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(15, 0), WorldToPixel(7, 1), 2, 1);
 
@@ -3027,6 +3685,7 @@ void Load(){
 	rock3 = al_load_bitmap("assets/rock3.png");
 	rock2 = al_load_bitmap("assets/rock2.png");
 	rock1 = al_load_bitmap("assets/rock1.png");
+	soil = al_load_bitmap("assets/depleted_rock.png");
 	grass = al_load_bitmap("assets/grass.png");
 	chopped_trees = al_load_bitmap("assets/chopped_trees.png");
 	farm1_1 = al_load_bitmap("assets/farm1_1.png");
@@ -3078,12 +3737,12 @@ void Load(){
 }
 
 void Update(){
-
+	
 	UpdateFarms(quintas);
 
-	UpdateCharacters(bonequinhos);
-
 	UpdateBuildings(edificios);
+
+	UpdateCharacters(bonequinhos);
 
 	UpdateForests(florestas);
 
