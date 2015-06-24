@@ -3295,6 +3295,9 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 		bonequinhos = CharAux;
 		while (quantidadeColonos > 0)
 		{
+<<<<<<< HEAD
+			bonequinhos=InsertCharacter(bonequinhos, men1, 0, 0, 0, 0, 0, 0);
+=======
 			if (man == 1)
 			{
 				bonequinhos = InsertCharacter(bonequinhos, woman1, 0, 0, 0, 0);
@@ -3305,6 +3308,7 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 				bonequinhos = InsertCharacter(bonequinhos, men1, 0, 0, 0, 0);
 				man = 1;
 			}
+>>>>>>> f78db1178947fbe45aec7a9f3e874ff2b9f68e7f
 			fscanf(data, "%s\n", &bonequinhos->action);
 			//bug			fprintf(data, "%d\n", colonosAux->animationFrame);
 			//bug			fprintf(data, "%s\n", colonosAux->animationTimer);
