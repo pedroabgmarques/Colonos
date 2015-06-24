@@ -3297,12 +3297,12 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 		{
 			if (man == 1)
 			{
-				bonequinhos = InsertCharacter(bonequinhos, woman1, 0, 0, 0, 0);
+				bonequinhos = InsertCharacter(bonequinhos, woman1, 0, 0, 0, 0, 0, 0);
 				man = 0;
 			}
 			else
 			{
-				bonequinhos = InsertCharacter(bonequinhos, men1, 0, 0, 0, 0);
+				bonequinhos = InsertCharacter(bonequinhos, men1, 0, 0, 0, 0, 0, 0);
 				man = 1;
 			}
 			fscanf(data, "%s\n", &bonequinhos->action);
