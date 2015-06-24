@@ -1433,10 +1433,10 @@ void UpdateBuildings(Building endereco){
 }
 
 //Encontrar edificio numa determinada posicao
-Building FindBuilding(Building endereco, int i, int j){
+Building FindBuilding(Building endereco, int x, int y){
 	Building building = NULL;
 	while (endereco != NULL){
-		if (endereco->x == i && endereco->y == j){
+		if (endereco->x == x && endereco->y == y){
 			building = endereco;
 		}
 		endereco = endereco->next;
@@ -1738,11 +1738,11 @@ void BuildHouseTask(Character endereco, int house){
 
 		//Gerar dois bonecos no fim do mapa, se for uma casa
 		if (house != 37){
-			Character boneco = InsertCharacter(bonequinhos, woman1, WorldToPixel(MAPWIDTH - 1, 0), WorldToPixel(4, 1), 2, 1, x, y);
+			Character boneco = InsertCharacter(bonequinhos, woman1, WorldToPixel(MAPWIDTH - 1, 0), WorldToPixel(4, 1), 2, 1, y, x);
 			boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
 			bonequinhos = boneco;
 
-			boneco = InsertCharacter(bonequinhos, men1, WorldToPixel(MAPWIDTH - 1, 0), WorldToPixel(10, 1), 2, 1, x, y);
+			boneco = InsertCharacter(bonequinhos, men1, WorldToPixel(MAPWIDTH - 1, 0), WorldToPixel(10, 1), 2, 1, y, x);
 			boneco->path = FindPath(PixelToWorld(boneco->x, 0), PixelToWorld(boneco->y, 1), XHeadQuarters(), YHeadQuarters() + 1);
 			bonequinhos = boneco;
 		}
