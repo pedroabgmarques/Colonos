@@ -2329,7 +2329,7 @@ void UpdateCharacters(Character endereco){
 			}
 		}
 
-		if (endereco->next != NULL){
+		if (endereco != NULL){
 
 			UpdateCharacters(endereco->next);
 		}
