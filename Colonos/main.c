@@ -638,7 +638,7 @@ void UpdateSearchNodes(){
 			}
 
 			//Apenas é caminho se tiver 1 na segunda posição desta tile
-			if (mapDef[y][x][1] == 1 && mapDef[y][x][2] == 1){
+			if (mapDef[y][x][1] == 1){
 				node->caminho = true;
 				searchNodes[x][y] = node;
 			}
@@ -2505,6 +2505,8 @@ void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int taref
 			bonecoSelecionado->tarefa = NULL;
 			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi, NULL);
 
+			mapDef[yi][xi][2] = 0;
+
 			printf("Inserida tarefa para construir casa\n");
 			printf("x: %d\n", xi);
 			printf("y: %d\n", yi);
@@ -2691,6 +2693,17 @@ void ProcessMouseClicks(Character bonequinhos){
 							//Limpar tarefas que tenha a criar uma nova TODO: free???
 							bonecoSelecionado->tarefa = NULL;
 							bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, 14, xi, yi, NULL);
+
+							mapDef[yi][xi][2] = 0;
+							mapDef[yi][xi + 1][2] = 0;
+							mapDef[yi + 1][xi][2] = 0;
+							mapDef[yi + 1][xi - 1][2] = 0;
+							mapDef[yi + 1][xi + 1][2] = 0;
+							mapDef[yi + 1][xi + 2][2] = 0;
+							mapDef[yi + 2][xi][2] = 0;
+							mapDef[yi + 2][xi - 1][2] = 0;
+							mapDef[yi + 2][xi + 1][2] = 0;
+							mapDef[yi + 2][xi + 2][2] = 0;
 
 							printf("Inserida tarefa para construir Farmhouse\n");
 							printf("x: %d\n", xi);
