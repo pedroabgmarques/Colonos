@@ -599,6 +599,7 @@ Character RemoveCharacter(Character enderecoInicioLista, Character boneco){
 			&& enderecoInicioLista->tarefaIniciada == boneco->tarefaIniciada){
 			//encontramos o elemento a eliminar
 			aux = enderecoInicioLista->next;
+			enderecoInicioLista->next = NULL;
 			return aux;
 		}
 		else{
@@ -1431,10 +1432,7 @@ void UpdateBuildings(Building endereco){
 
 				listaBonecos->next = bonequinhos;
 				bonequinhos = listaBonecos;
-				listaBonecos = RemoveCharacter(listaBonecos, listaBonecos);
 				
-
-
 			}
 			if (listaBonecos != NULL){
 				listaBonecos = listaBonecos->next;
@@ -1907,17 +1905,12 @@ void UpdateCharacters(Character endereco){
 				{
 				case 0:
 					//IR PARA CASA
-					//Remover este boneco da lista de bonecos
-					//Remover da lista de bonecos
+
 					if (bonequinhos != NULL){
 						bonequinhos = RemoveCharacter(bonequinhos, endereco);
 					}
-					else{
-						break;
-					}
 					
-					//Adicionar este boneco à lista da casa
-					Building edificio = endereco->tarefa->building;
+				    Building edificio = endereco->tarefa->building;
 					Character colono = edificio->colonists;
 					endereco->next = colono;
 					edificio->colonists = endereco;
@@ -1932,6 +1925,7 @@ void UpdateCharacters(Character endereco){
 						}
 					}
 
+					endereco = bonequinhos;
 
 					break;
 				case 1:
@@ -2281,10 +2275,10 @@ void UpdateCharacters(Character endereco){
 		}
 		
 
-		if (endereco->next != NULL){
+		if (endereco != NULL){
 			UpdateCharacters(endereco->next);
 		}
-	
+		
 	}
 }
 
