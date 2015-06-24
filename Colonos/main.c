@@ -23,7 +23,7 @@ ALLEGRO_MOUSE_STATE mouseStateAnterior;
 int mouseButtons;
 //OUTRAS
 int exitGame = 0;
-const float FPS = 60;
+const float FPS = 240;
 float x, y;
 FILE* data;
 int saveUIactive = 0;//0 - desativada, 1 - activo
@@ -395,12 +395,12 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y){
 		break;
 	case 5:
 		//Apanhar peixe
-		tarefa->tempo = 3000;
+		tarefa->tempo = 1000;
 		tarefa->energianecessaria = 3;
 		break;
 	case 6:
 		//Descarregar peixe
-		tarefa->tempo = 300;
+		tarefa->tempo = 100;
 		tarefa->energianecessaria = 2;
 		break;
 	case 7:
@@ -2141,7 +2141,6 @@ void UpdateCharacters(Character endereco){
 						endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 
 						//Inserir a tarefa de descarregar comida, guardando o x, y em que estavamos a apanhar
-						//Vamos descarregar comida!
 						endereco->tarefa = InsertTarefa(endereco->tarefa, 6, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1));
 
 					}
@@ -2203,7 +2202,7 @@ void UpdateCharacters(Character endereco){
 						}
 					}
 
-
+					break;
 				case 7:
 					if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 						//Acabamos de apanhar vegetais!
@@ -2221,7 +2220,7 @@ void UpdateCharacters(Character endereco){
 
 						//Inserir a tarefa de descarregar vegetais, guardando o x, y em que estavamos a apanhar
 						//Vamos descarregar comida!
-						endereco->tarefa = InsertTarefa(endereco->tarefa, 6, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1));
+						endereco->tarefa = InsertTarefa(endereco->tarefa, 8, PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1));
 
 					}
 					else{
@@ -3659,7 +3658,7 @@ void LoadInitialState(){
 
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1, edificios->x, edificios->y);
-	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(5, 1), 2, 1, edificios->x, edificios->y);
+	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(15, 1), 2, 1, edificios->x, edificios->y);
 	//bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(12, 0), WorldToPixel(5, 1), 2, 1);
 	//bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(15, 0), WorldToPixel(7, 1), 2, 1);
 
