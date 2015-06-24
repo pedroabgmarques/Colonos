@@ -439,34 +439,42 @@ Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y, Building edific
 	case 14:
 		//Construir Farmhouse
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 18;
 		break;
 	case 15:
 		//Plantar Milho
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
 		break;
 	case 16:
 		//Plantar Morango
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
 		break;
 	case 17:
 		//Plantar Pimento
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
 		break;
 	case 18:
 		//Plantar Batata
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
 		break;
 	case 19:
 		//Plantar Nabo
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
 		break;
 	case 20:
 		//Plantar Cenoura
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
 		break;
 	case 21:
 		//Plantar Beterraba
 		tarefa->tempo = 3000;
+		tarefa->energianecessaria = 8;
 		break;
 	default:
 		break;
@@ -1636,9 +1644,17 @@ Building FindAvailableBuilding(Building edificios){
 	Building casa = NULL;
 	Building casas = edificios;
 	while (casas != NULL){
-		if (ListCountCharactersHouse(casas) < 2){
+		if (
+			(casas->type == 39
+			|| casas->type == 40
+			|| casas->type == 45
+			|| casas->type == 46)
+			&&
+			ListCountCharactersHouse(casas) < 2
+			&& casas->constructionCounter == 32){
 			return casas;
 		}
+		casas = casas->next;
 	}
 	return casa;
 }
@@ -1651,8 +1667,8 @@ void VerificarEnergia(Character endereco){
 		//endereco->tarefa = NULL;
 
 		Building edificio = FindAvailableBuilding(edificios);
-		endereco->tarefa = InsertTarefa(endereco->tarefa, 0, edificio->x, edificio->y, edificio);
 		endereco->path = FindPath(PixelToWorld(endereco->x, 0), PixelToWorld(endereco->y, 1), edificio->y, edificio->x + 1);
+		endereco->tarefa = InsertTarefa(endereco->tarefa, 0, edificio->x, edificio->y, edificio);
 
 		printf("Inserida tarefa de ir para casa\n");
 		printf("x: %d\n", endereco->x);
@@ -1692,6 +1708,7 @@ void setTextoErro(char texto[256]){
 void PlantFarmTask(Character endereco, int farm){
 	if (endereco->tarefa->tempoExecucao > endereco->tarefa->tempo){
 		//Acabamos de plantar uma quinta!
+		endereco->energia -= endereco->tarefa->energianecessaria;
 
 		strcpy(endereco->action, "Idle");
 
@@ -1793,7 +1810,7 @@ void BuildHouseTask(Character endereco, int house){
 		}
 
 		char result[500];
-		sprintf(result, "%s%d%s", "Bulding (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
+		sprintf(result, "%s%d%s", "Building (", (endereco->tarefa->tempoExecucao * 100 / endereco->tarefa->tempo), "%)");
 		strcpy(endereco->action, result);
 
 		endereco->tarefa->tempoExecucao++;
@@ -2453,7 +2470,9 @@ void BuildFarmClick(Character bonecoSelecionado, int xi, int yi, int tarefa){
 	if (mapDef[yi][xi][0] == 47){
 		//Terra vazia, podemos plantar
 		//Encontrar um vizinho em que se possa andar
+		bonecoSelecionado->path = NULL;
 		if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
+			opcaoAtiva = NULL;
 			bonecoSelecionado->tarefa = NULL;
 			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi, NULL);
 
@@ -2464,7 +2483,6 @@ void BuildFarmClick(Character bonecoSelecionado, int xi, int yi, int tarefa){
 
 			strcpy(bonecoSelecionado->action, "Walking to plant a farm");
 			bonecoSelecionado = NULL;
-			opcaoAtiva = NULL;
 		}
 		else{
 			setTextoErro("Can't reach farm!");
@@ -2480,6 +2498,7 @@ void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int taref
 
 	//Verificar se se pode construir neste espaço
 	if (mapDef[yi][xi][2] == 1 && FindBuilding(edificios, yi, xi) == NULL){
+		bonecoSelecionado->path = NULL;
 		//Encontrar um vizinho em que se possa andar
 		if (FazerBonecoAndarVizinho(bonecoSelecionado, xi, yi)){
 			//Limpar tarefas que tenha a criar uma nova TODO: free???
@@ -2619,7 +2638,7 @@ void ProcessMouseClicks(Character bonequinhos){
 					
 					break;
 
-				case 'm':
+				case 'l':
 					BuildFarmClick(bonecoSelecionado, xi, yi, 15);
 					break;
 				case 'o':
@@ -3199,6 +3218,7 @@ void UpdateInput(){
 			}
 		}
 	}
+
 	//se pressionar mos "y" na UI de save game, guarda o map e sai
 	if (saveUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_Y))
 	{
@@ -3239,6 +3259,16 @@ void UpdateInput(){
 		if (al_key_down(&state, ALLEGRO_KEY_W)){
 			if (-(offsetY) > 0)
 				offsetY += TILEHEIGHT;
+		}
+
+		//CHEATS
+		if (al_key_down(&state, ALLEGRO_KEY_F1))
+		{
+			madeira += 50;
+		}
+		if (al_key_down(&state, ALLEGRO_KEY_F2))
+		{
+			pedra += 50;
 		}
 
 		//Percorrer a lista de opções e executar opções premidas
@@ -3314,7 +3344,7 @@ void UpdateInput(){
 					if (al_key_down(&state, ALLEGRO_KEY_P)){
 						opcoes = NULL;
 						//Tipos de plantações
-						opcoes = InsertOption(opcoes, 'm', "Milho", 0, 0);
+						opcoes = InsertOption(opcoes, 'l', "Milho", 0, 0);
 						opcoes = InsertOption(opcoes, 'o', "Morango", 0, 0);
 						opcoes = InsertOption(opcoes, 'i', "Pimento", 0, 0);
 						opcoes = InsertOption(opcoes, 'a', "Batata", 0, 0);
@@ -3324,10 +3354,10 @@ void UpdateInput(){
 					}
 					break;
 
-				case 'm':
+				case 'l':
 					//Milho
-					if (al_key_down(&state, ALLEGRO_KEY_M)){
-						opcaoAtiva = InsertOption(opcaoAtiva, 'm', "plantar Milho", 0, 0);
+					if (al_key_down(&state, ALLEGRO_KEY_L)){
+						opcaoAtiva = InsertOption(opcaoAtiva, 'l', "plantar Milho", 0, 0);
 						opcoes = NULL;
 					}
 					break;
