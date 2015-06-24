@@ -3053,7 +3053,13 @@ void DrawEdificioSelecionado(){
 
 			char str[100];
 			sprintf(str, "%s%d", "Colonists: ", nColonistas);
+			if (nColonistas>0)
+			{
+				char result[500];
+				sprintf(result, "%s%d%s", "Energy (", (int)edificioSelecionado->colonists->energia, "%)");
+				al_draw_text(textos, WHITE, fundoX + 700, fundoY + 45, 0, result);
 
+			}
 			al_draw_text(textos,
 				WHITE, fundoX + 10, fundoY + 48, 0,
 				str);
