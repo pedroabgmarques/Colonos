@@ -30,6 +30,7 @@ int saveUIactive = 0;//0 - desativada, 1 - activo
 int loadUIactive = 1;//0- desactivada, 1 - activo
 int quantidadeEdificios;
 int quantidadeColonos;
+int numeroTarefas;
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
 
@@ -3011,7 +3012,28 @@ int contarColonos()
 		numColonos++;
 		aux = aux->next;
 	}
-	return (numColonos - 2);
+	return (numColonos-2);
+}
+//contar numero de tarefas de um colono
+int contarTarefas(Tarefa endereco)
+{
+	int contador = 0;
+	while (endereco != NULL)
+	{
+		contador++;
+		endereco = endereco->next;
+	}
+	return contador;
+}
+//remover tarefas antes de guardar
+void removerTarefas(Character endereco)
+{
+	
+		endereco->tarefa = NULL;
+		strcpy(endereco->action, "Idle");
+
+		
+
 }
 //Guardar estado actual do mapa
 void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
@@ -3054,8 +3076,13 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 		quantidadeColonos = contarColonos();
 		fprintf(data, "%d\n", quantidadeColonos);
 		Character colonosAux = bonequinhos;
+		
+		
 		while (colonosAux != NULL)
 		{
+			removerTarefas(colonosAux);
+			removerTarefas(bonequinhos);
+			
 			fprintf(data, "%s\n", colonosAux->action);
 //bug			fprintf(data, "%d\n", colonosAux->animationFrame);
 //bug			fprintf(data, "%s\n", colonosAux->animationTimer);
@@ -3068,7 +3095,12 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 			
 			fprintf(data, "%d\n", PixelToWorld(colonosAux->x,0));
 			fprintf(data, "%d\n", PixelToWorld(colonosAux->y,1));
+			//guardar as tarefas de cada colono
+			
+			
+			
 			colonosAux = colonosAux->next;
+			
 		}
 		fclose(data);
 	
@@ -3128,6 +3160,11 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 		fscanf(data, "%d", &quantidadeColonos);
 		Character CharAux = bonequinhos;
 		int posicaoX=0,posicaoY=0;
+		Tarefa tarefaAux = bonequinhos->tarefa;
+		int tipoTarefa = 0;
+		int procurarBuildingX = 0,procurarBuildingY;
+		int man = 0;
+		Building buildingPesquisado = NULL;
 		for (int j = 0; j < 2; j++)
 		{
 			fscanf(data, "%s\n", &bonequinhos->action);
@@ -3143,13 +3180,22 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 			fscanf(data, "%d\n", &posicaoY);
 			bonequinhos->x = WorldToPixel(posicaoX, 0);
 			bonequinhos->y = WorldToPixel(posicaoY, 1);
-
+			
 			bonequinhos = bonequinhos->next;
 		}
 		bonequinhos = CharAux;
 		while (quantidadeColonos > 0)
 		{
-			bonequinhos=InsertCharacter(bonequinhos, men1, 0, 0, 0, 0);
+			if (man == 1)
+			{
+				bonequinhos = InsertCharacter(bonequinhos, woman1, 0, 0, 0, 0);
+				man = 0;
+			}
+			else
+			{
+				bonequinhos = InsertCharacter(bonequinhos, men1, 0, 0, 0, 0);
+				man = 1;
+			}
 			fscanf(data, "%s\n", &bonequinhos->action);
 			//bug			fprintf(data, "%d\n", colonosAux->animationFrame);
 			//bug			fprintf(data, "%s\n", colonosAux->animationTimer);
@@ -3159,8 +3205,10 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 			fscanf(data, "%d\n", &bonequinhos->movimento);
 			fscanf(data, "%d\n", &bonequinhos->pedra);
 			//fprintf(data, "%s\n", colonosAux->spriteSheet);
-			fscanf(data, "%f\n", &bonequinhos->x);
-			fscanf(data, "%f\n", &bonequinhos->y);
+			fscanf(data, "%d\n", &posicaoX);
+			fscanf(data, "%d\n", &posicaoY);
+			bonequinhos->x = WorldToPixel(posicaoX, 0);
+			bonequinhos->y = WorldToPixel(posicaoY, 1);
 			quantidadeColonos--;
 		}
 		fclose(data);
