@@ -3424,18 +3424,22 @@ void UpdateInput(){
 						if (edificioSelecionado != NULL){
 							//retirar o bonequinho da lista da casa e colocá-lo na lista de bonequinhos
 
-							while (edificioSelecionado->colonists != NULL){
+							Character aux = edificioSelecionado->colonists;
+							while (aux != NULL){
 
 								//guardar o apontador para o proximo colono nesta casa
-								Character next = edificioSelecionado->colonists->next;
+								Character next = aux->next;
 								//Colocar o colono na lista de bonequinhos
-								Character aux = edificioSelecionado->colonists;
-								aux->next = bonequinhos;
-								bonequinhos = aux;
+								Character aux2 = aux;
+								aux2->next = bonequinhos;
+								bonequinhos = aux2;
 								//Remover o colono da lista de colonos nesta casa
-								edificioSelecionado->colonists = RemoveCharacter(edificioSelecionado->colonists, edificioSelecionado->colonists);
+								edificioSelecionado->colonists = RemoveCharacter(edificioSelecionado->colonists, aux);
+
+								aux->tarefa = NULL;
+
 								//Passar para o proximo colono da casa
-								edificioSelecionado->colonists = next;
+								aux = next;
 							}
 						}
 						edificioSelecionado = NULL;
@@ -3664,7 +3668,7 @@ void LoadInitialState(){
 
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1, edificios->x, edificios->y);
-	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(15, 1), 2, 1, edificios->x, edificios->y);
+	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(5, 1), 2, 1, edificios->x, edificios->y);
 	//bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(12, 0), WorldToPixel(5, 1), 2, 1);
 	//bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(15, 0), WorldToPixel(7, 1), 2, 1);
 
