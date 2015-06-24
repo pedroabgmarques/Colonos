@@ -1993,7 +1993,7 @@ void UpdateCharacters(Character endereco){
 								
 								if (endereco->energia<10)
 								{
-									endereco->tarefa = InsertTarefa(endereco->tarefa, 0, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
+									endereco->tarefa = InsertTarefa(endereco->tarefa, 0, enderecoTarefaX, enderecoTarefaY);
 
 								}
 								else if (((!WarehouseBuilt() && madeira < 500)
@@ -2328,13 +2328,9 @@ void UpdateCharacters(Character endereco){
 				
 			}
 		}
-<<<<<<< HEAD
-		if (endereco->next != NULL){
-=======
-		
 
-		if (endereco != NULL){
->>>>>>> ddcca2bc71bad79573673722a2673a63b1b582bc
+		if (endereco->next != NULL){
+
 			UpdateCharacters(endereco->next);
 		}
 		
