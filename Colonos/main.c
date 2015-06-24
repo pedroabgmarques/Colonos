@@ -1975,7 +1975,8 @@ void UpdateCharacters(Character endereco){
 							//Acabamos de descarregar madeira!
 							//Decrementamos a energia do colono!
 							endereco->energia -= endereco->tarefa->energianecessaria;
-							
+
+							if (endereco->energia<10)
 
 								//Incrementar a quantidade de madeira
 								madeira += endereco->madeira;
@@ -1989,8 +1990,13 @@ void UpdateCharacters(Character endereco){
 								enderecoTarefaY = endereco->tarefa->y;
 								//Remover a tarefa atual
 								endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+								
+								if (endereco->energia<10)
+								{
+									endereco->tarefa = InsertTarefa(endereco->tarefa, 0, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
 
-								if (((!WarehouseBuilt() && madeira < 500)
+								}
+								else if (((!WarehouseBuilt() && madeira < 500)
 									|| (WarehouseBuilt() && madeira < 2000))){
 
 									//Verificar se o recurso ainda existe
@@ -2322,9 +2328,13 @@ void UpdateCharacters(Character endereco){
 				
 			}
 		}
+<<<<<<< HEAD
+		if (endereco->next != NULL){
+=======
 		
 
 		if (endereco != NULL){
+>>>>>>> ddcca2bc71bad79573673722a2673a63b1b582bc
 			UpdateCharacters(endereco->next);
 		}
 		
