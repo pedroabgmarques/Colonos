@@ -1745,7 +1745,8 @@ void UpdateCharacters(Character endereco){
 							//Acabamos de descarregar madeira!
 							//Decrementamos a energia do colono!
 							endereco->energia -= endereco->tarefa->energianecessaria;
-							
+
+							if (endereco->energia<10)
 
 								//Incrementar a quantidade de madeira
 								madeira += endereco->madeira;
@@ -1759,8 +1760,13 @@ void UpdateCharacters(Character endereco){
 								enderecoTarefaY = endereco->tarefa->y;
 								//Remover a tarefa atual
 								endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+								
+								if (endereco->energia<10)
+								{
+									endereco->tarefa = InsertTarefa(endereco->tarefa, 0, enderecoTarefaX, enderecoTarefaY, NULL, 0, 0);
 
-								if (((!WarehouseBuilt() && madeira < 500)
+								}
+								else if (((!WarehouseBuilt() && madeira < 500)
 									|| (WarehouseBuilt() && madeira < 2000))){
 
 									//Verificar se o recurso ainda existe
@@ -1986,18 +1992,6 @@ void UpdateCharacters(Character endereco){
 				
 			}
 		}
-		if (endereco->energia <= 10)
-		{
-			endereco->tarefa = InsertTarefa(endereco->tarefa, 0,endereco->x, endereco->y, NULL, 0, 0);
-
-			printf("Inserida tarefa de ir para casa\n");
-			printf("x: %d\n", endereco->x);
-			printf("y: %d\n", endereco->y);
-			printf("\n\n");
-
-			strcpy(endereco->action, "Walking to home");
-		}
-
 		if (endereco->next != NULL){
 			UpdateCharacters(endereco->next);
 		}
