@@ -1976,61 +1976,59 @@ void UpdateCharacters(Character endereco){
 							//Decrementamos a energia do colono!
 							endereco->energia -= endereco->tarefa->energianecessaria;
 
-							if (endereco->energia<10)
+							//Incrementar a quantidade de madeira
+							madeira += endereco->madeira;
+							//Retirar a madeira que o boneco carregava
+							endereco->madeira = 0;
 
-								//Incrementar a quantidade de madeira
-								madeira += endereco->madeira;
-								//Retirar a madeira que o boneco carregava
-								endereco->madeira = 0;
-
-								int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
-								enderecoX = endereco->x;
-								enderecoY = endereco->y;
-								enderecoTarefaX = endereco->tarefa->x;
-								enderecoTarefaY = endereco->tarefa->y;
-								//Remover a tarefa atual
-								endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
+							int enderecoX, enderecoY, enderecoTarefaX, enderecoTarefaY;
+							enderecoX = endereco->x;
+							enderecoY = endereco->y;
+							enderecoTarefaX = endereco->tarefa->x;
+							enderecoTarefaY = endereco->tarefa->y;
+							//Remover a tarefa atual
+							endereco->tarefa = RemoveTarefa(endereco->tarefa, endereco->tarefa->type, endereco->tarefa->x, endereco->tarefa->y);
 								
-								if (endereco->energia<10)
+							if (endereco->energia<10)
+							{
+								endereco->tarefa = InsertTarefa(endereco->tarefa, 0, enderecoTarefaX, enderecoTarefaY);
+
+							}
+							else if (((!WarehouseBuilt() && madeira < 500)
+								|| (WarehouseBuilt() && madeira < 2000))){
+
+								//Verificar se o recurso ainda existe
+								if (FindForest(florestas, enderecoTarefaX, enderecoTarefaY)->phase == 0)
 								{
-									endereco->tarefa = InsertTarefa(endereco->tarefa, 0, enderecoTarefaX, enderecoTarefaY);
 
-								}
-								else if (((!WarehouseBuilt() && madeira < 500)
-									|| (WarehouseBuilt() && madeira < 2000))){
+									if (FazerBonecoAndarVizinho(endereco, enderecoTarefaX, enderecoTarefaY)){
+										endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY);
 
-									//Verificar se o recurso ainda existe
-									if (FindForest(florestas, enderecoTarefaX, enderecoTarefaY)->phase == 0)
-									{
+										printf("Inserida tarefa para apanhar madeira\n");
+										printf("x: %d\n", enderecoTarefaX);
+										printf("y: %d\n", enderecoTarefaY);
+										printf("\n\n");
 
-										if (FazerBonecoAndarVizinho(endereco, enderecoTarefaX, enderecoTarefaY)){
-											endereco->tarefa = InsertTarefa(endereco->tarefa, 1, enderecoTarefaX, enderecoTarefaY);
-
-											printf("Inserida tarefa para apanhar madeira\n");
-											printf("x: %d\n", enderecoTarefaX);
-											printf("y: %d\n", enderecoTarefaY);
-											printf("\n\n");
-
-											strcpy(endereco->action, "Walking to gather wood");
-										}
-										else{
-											setTextoErro("Can't reach resource!");
-										}
-
+										strcpy(endereco->action, "Walking to gather wood");
 									}
 									else{
-										//A madeira que estavamos a cortar acabou!
-										setTextoErro("Resource is depleted!");
-										strcpy(endereco->action, "Idle");
+										setTextoErro("Can't reach resource!");
 									}
 
 								}
 								else{
-									setTextoErro("Can't store/gather any more wood!");
+									//A madeira que estavamos a cortar acabou!
+									setTextoErro("Resource is depleted!");
 									strcpy(endereco->action, "Idle");
 								}
 
-								VerificarEnergia(endereco);
+							}
+							else{
+								setTextoErro("Can't store/gather any more wood!");
+								strcpy(endereco->action, "Idle");
+							}
+
+							VerificarEnergia(endereco);
 
 						}
 						else{
