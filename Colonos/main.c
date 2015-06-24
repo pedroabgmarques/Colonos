@@ -759,6 +759,19 @@ int ListCountCharactersHouse(Building casa){
 			bonecos = bonecos->next;
 		}
 	}
+	Character bonecos = bonequinhos;
+	while (bonecos != NULL){
+		if (bonecos->tarefa != NULL && bonecos->tarefa->building){
+			int casaType = bonecos->tarefa->building->type;
+			if (casaType == 39 || casaType == 40 || casaType == 45 || casaType == 46){
+				//casas
+				if (casaType == casa->type){
+					contador++;
+				}
+			}
+		}
+		bonecos = bonecos->next;
+	}
 	return contador;
 }
 
@@ -1383,18 +1396,16 @@ void UpdateBuildings(Building endereco){
 		}
 
 		//Dar energia aos bonecos
-		Character bonecos = aux->colonists;
-		while (bonecos != NULL){
-			if (bonecos->energia <= 100)
-				bonecos->energia += 0.1;
-			bonecos = bonecos->next;
+		Character aux2 = aux->colonists;
+		while (aux->colonists != NULL){
+			if (aux->colonists->energia <= 100){
+				aux->colonists->energia += 0.1;
+				printf("Energia: %f\n", aux->colonists->energia);
+			}
+			aux->colonists = aux->colonists->next;
 		}
+		aux->colonists = aux2;
 
-		aux = aux->next;
-	}
-
-	aux = endereco;
-	while (aux != NULL){
 		Character listaBonecos = aux->colonists;
 		while (listaBonecos != NULL){
 
@@ -1403,37 +1414,29 @@ void UpdateBuildings(Building endereco){
 				printf("Boneco pronto para sair de casa!\n");
 
 				aux->colonists = RemoveCharacter(aux->colonists, listaBonecos);
-				
 
 				//Colocar o colono na lista de bonequinhos
 				listaBonecos->energia = 100;
 
-				Character aux2 = listaBonecos;
-				
 				//Aqui podia-se tentar manter a tarefa anterior..
 				listaBonecos->tarefa = NULL;
 
+				listaBonecos->next = bonequinhos;
+				bonequinhos = listaBonecos;
 				listaBonecos = RemoveCharacter(listaBonecos, listaBonecos);
-				aux2->next = bonequinhos;
-				bonequinhos = aux2;
-
 				
-			}
-			else{
-				printf("Energia: %f\n", listaBonecos->energia);
-			}
 
+
+			}
 			if (listaBonecos != NULL){
 				listaBonecos = listaBonecos->next;
 			}
-			else{
-				break;
-			}
-			
 		}
 
 		aux = aux->next;
 	}
+	
+
 }
 
 //Encontrar edificio numa determinada posicao
@@ -1802,8 +1805,6 @@ void BuildHouseTask(Character endereco, int house){
 void UpdateCharacters(Character endereco){
 
 	bonecoHovered = false;
-	
-	
 
 	if (endereco != NULL)
 	{
@@ -1891,7 +1892,13 @@ void UpdateCharacters(Character endereco){
 					//IR PARA CASA
 					//Remover este boneco da lista de bonecos
 					//Remover da lista de bonecos
-					bonequinhos = RemoveCharacter(bonequinhos, endereco);
+					if (bonequinhos != NULL){
+						bonequinhos = RemoveCharacter(bonequinhos, endereco);
+					}
+					else{
+						break;
+					}
+					
 					//Adicionar este boneco à lista da casa
 					Building edificio = endereco->tarefa->building;
 					Character colono = edificio->colonists;
@@ -3487,7 +3494,7 @@ void LoadInitialState(){
 
 	//Bonequinhos iniciais
 	bonequinhos = InsertCharacter(bonequinhos, woman1, WorldToPixel(13, 0), WorldToPixel(4, 1), 2, 1);
-	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(10, 1), 2, 1);
+	bonequinhos = InsertCharacter(bonequinhos, men1, WorldToPixel(14, 0), WorldToPixel(5, 1), 2, 1);
 	//bonequinhos = InsertCharacter(bonequinhos, woman2, WorldToPixel(12, 0), WorldToPixel(5, 1), 2, 1);
 	//bonequinhos = InsertCharacter(bonequinhos, men2, WorldToPixel(15, 0), WorldToPixel(7, 1), 2, 1);
 
@@ -3559,12 +3566,12 @@ void Load(){
 }
 
 void Update(){
-
+	
 	UpdateFarms(quintas);
 
-	UpdateCharacters(bonequinhos);
-
 	UpdateBuildings(edificios);
+
+	UpdateCharacters(bonequinhos);
 
 	UpdateForests(florestas);
 
