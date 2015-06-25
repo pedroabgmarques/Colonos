@@ -3483,14 +3483,23 @@ void UpdateInput(){
 		exitGame = 1;
 		ShutDown();
 	}
+	if (saveUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_N))
+	{
+
+		saveUIactive = 0;
+		exitGame = 1;
+		ShutDown();
+	}
 	//se pressionarmos "y" na UI de load game, faz load do mapa guardado
 	if (loadUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_Y))
 	{
+		
 		loadUIactive = 0;
 		loadMap();
 	}
 	if (loadUIactive == 1 && al_key_down(&state, ALLEGRO_KEY_N))
 	{
+		
 		loadUIactive = 0;
 	}
 	
@@ -3896,6 +3905,7 @@ void checkLoadedGame()
 		{
 			//fclose(data);
 			DrawLoadUI();
+			
 		}
 	}
 }
