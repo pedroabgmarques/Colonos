@@ -3226,7 +3226,7 @@ int contarQuintas(Farm endereco)
 //Guardar estado actual do mapa
 void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 {
-	int i, j, z=0;
+	int i, j, z;
 	int qtEdificios=0;
 		data = fopen("data.txt", "w");
 		for (i = 0; i < MAPWIDTH; i++)
