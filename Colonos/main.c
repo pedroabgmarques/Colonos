@@ -129,7 +129,7 @@ typedef struct farm
 	int timer; //Contador de há quanto tempo a quinta está no estado atual
 	int phase; //Fase em que a quinta se encontra (0, 1, 2)
 	int minTimer; //Tempo necessário para passar para a próxima fase
-	char *name; //Nome descritivo do tipo de quinta
+	char  name[256]; //Nome descritivo do tipo de quinta
 	struct farm *next; //Apontador para o elemento seguinte
 }* Farm;
 
@@ -1291,31 +1291,38 @@ Farm InsertFarm(Farm endereco, int j, int i, int type){
 	{
 	case 14:
 		farm->minTimer = 8000;
-		farm->name = _strdup("Beterraba");
+		//farm->name = _strdup("Beterraba");
+		strcpy(farm->name, "Beterraba");
 		break;
 	case 17:
 		farm->minTimer = 6000;
-		farm->name = _strdup("Cenoura");
+		//farm->name = _strdup("Cenoura");
+		strcpy(farm->name, "Cenoura");
 		break;
 	case 20:
 		farm->minTimer = 10000;
-		farm->name = _strdup("Nabo");
+		//farm->name = _strdup("Nabo");
+		strcpy(farm->name, "Nabo");
 		break;
 	case 23:
 		farm->minTimer = 6000;
-		farm->name = _strdup("Batata");
+		//farm->name = _strdup("Batata");
+		strcpy(farm->name, "Batata");
 		break;
 	case 26:
 		farm->minTimer = 5000;
-		farm->name = _strdup("Pimento");
+		//farm->name = _strdup("Pimento");
+		strcpy(farm->name, "Pimento");
 		break;
 	case 29:
 		farm->minTimer = 3500;
-		farm->name = _strdup("Morango");
+		//farm->name = _strdup("Morango");
+		strcpy(farm->name, "Morango");
 		break;
 	case 32:
 		farm->minTimer = 8000;
-		farm->name = _strdup("Milho");
+		//farm->name = _strdup("Milho");
+		strcpy(farm->name, "Milho");
 		break;
 	default:
 		break;
@@ -3212,6 +3219,7 @@ int contarQuintas(Farm endereco)
 	while (endereco != NULL)
 	{
 		contador++;
+		endereco = endereco->next;
 	}
 	return contador;
 }
@@ -3285,7 +3293,7 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 		//guardar quintas
 		Farm farmAux = quintas;
 		int numeroQuintas;
-		numeroQuintas = contarQuintas(farmAux);
+		numeroQuintas = contarQuintas(quintas);
 		fprintf(data, "%d\n", numeroQuintas);
 		while (farmAux != NULL)
 		{
@@ -3408,8 +3416,23 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 			bonequinhos->y = WorldToPixel(posicaoY, 1);
 			quantidadeColonos--;
 		}
+		//ler quintas
+		quintas = NULL;
 		fscanf(data, "%d\n", &quantidadeQuintas);
-		if (quantidadeQuintas > 0)
+		while (quantidadeQuintas > 0)
+		{ 
+			quintas=InsertFarm(quintas, 0, 0, 0);
+			fscanf(data, "%d\n", &quintas->i);
+			fscanf(data, "%d\n", &quintas->j);
+			fscanf(data, "%d\n", &quintas->minTimer);
+			fscanf(data, "%s\n", &quintas->name);
+			fscanf(data, "%d\n", &quintas->phase);
+			fscanf(data, "%d\n", &quintas->timer);
+			fscanf(data, "%d\n", &quintas->type);
+			quantidadeQuintas--;
+		}
+		/*Farm farmAux = quintas;
+		for (int z = 0; z < quantidadeQuintas-1; z++)
 		{
 			quintas=InsertFarm(quintas, 0, 0, 0);
 			fscanf(data, "%d\n", &quintas->i);
@@ -3419,20 +3442,8 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 			fscanf(data, "%d\n", &quintas->phase);
 			fscanf(data, "%d\n", &quintas->timer);
 			fscanf(data, "%d\n", &quintas->type);
-		}
-		Farm farmAux = quintas;
-		for (int z = 0; z < quantidadeQuintas-1; z++)
-		{
-			farmAux=InsertFarm(quintas, 0, 0, 0);
-			fscanf(data, "%d\n", &farmAux->i);
-			fscanf(data, "%d\n", &farmAux->j);
-			fscanf(data, "%d\n", &farmAux->minTimer);
-			fscanf(data, "%s\n", &farmAux->name);
-			fscanf(data, "%d\n", &farmAux->phase);
-			fscanf(data, "%d\n", &farmAux->timer);
-			fscanf(data, "%d\n", &farmAux->type);
-		}
-
+		}*/
+	
 		fclose(data);
 	}
 	
