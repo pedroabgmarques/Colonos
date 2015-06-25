@@ -360,6 +360,32 @@ void ResetSearchNodes(){
 	}
 }
 
+int PixelToWorld(float value, int WidthOrHeight){
+	int res = 0;
+	if (WidthOrHeight == 0){
+		//Largura
+		res = (int)((value / TILEWIDTH));
+	}
+	else{
+		//Altura
+		res = (int)((value / TILEHEIGHT));
+	}
+	return res;
+}
+
+float WorldToPixel(int value, int WidthOrHeight){
+	int res = 0;
+	if (WidthOrHeight == 0){
+		//Largura
+		res = (value * TILEWIDTH);
+	}
+	else{
+		//Altura
+		res = (value * TILEHEIGHT);
+	}
+	return res;
+}
+
 //Insere uma tarefa numa lista de tarefas
 Tarefa InsertTarefa(Tarefa listaTarefas, int type, int x, int y){
 	Tarefa tarefa = malloc(sizeof(struct tarefa));
@@ -1225,7 +1251,8 @@ Building InsertBuilding(Building endereco, int j, int i, int type){
 	edificio->colonists = NULL;
 	mapDef[i][j][0] = type;
 	mapDef[i][j][1] = 0; // Characters can't walk over buildings 
-	mapDef[i][j][2] = 0; // Can't build over farms
+	mapDef[i][j][2] = 0; // Can't build over buildings
+	mapDef[i + 1][j][2] = 0; //Espaço da entrada
 	return edificio;
 }
 
@@ -1442,6 +1469,11 @@ void UpdateBuildings(Building endereco){
 
 				listaBonecos->next = bonequinhos;
 				bonequinhos = listaBonecos;
+
+				/*printf("x: %f / %d\n", bonequinhos->x, PixelToWorld(bonequinhos->x, 0));
+				printf("y: %f / %d\n", bonequinhos->y, PixelToWorld(bonequinhos->y, 1));*/
+
+				bonequinhos->path = FindPath(PixelToWorld(bonequinhos->x, 0), PixelToWorld(bonequinhos->y, 1), XHeadQuarters() + 1, YHeadQuarters() + 1);
 				
 			}
 			if (listaBonecos != NULL){
@@ -1593,31 +1625,7 @@ Character InsertCharacter(Character endereco, ALLEGRO_BITMAP *sprite, float x, f
 	return boneco;
 }
 
-int PixelToWorld(float value, int WidthOrHeight){
-	int res = 0;
-	if (WidthOrHeight == 0){
-		//Largura
-		res = (int)((value / TILEWIDTH));
-	}
-	else{
-		//Altura
-		res = (int)((value / TILEHEIGHT));
-	}
-	return res;
-}
 
-float WorldToPixel(int value, int WidthOrHeight){
-	int res = 0;
-	if (WidthOrHeight == 0){
-		//Largura
-		res = (value * TILEWIDTH);
-	}
-	else{
-		//Altura
-		res = (value * TILEHEIGHT);
-	}
-	return res;
-}
 
 bool AlmostEqualRelative(float A, float B)
 {
@@ -2590,6 +2598,7 @@ void BuildHouseSpaceClick(Character bonecoSelecionado, int xi, int yi, int taref
 			bonecoSelecionado->tarefa = InsertTarefa(bonecoSelecionado->tarefa, tarefa, xi, yi);
 
 			mapDef[yi][xi][2] = 0;
+			mapDef[yi + 1][xi][2] = 0;
 
 			printf("Inserida tarefa para construir casa\n");
 			printf("x: %d\n", xi);
@@ -2625,6 +2634,7 @@ void ProcessMouseClicks(Character bonequinhos){
 
 			//Adicionar opção de construir
 			opcoes = NULL;
+			opcaoAtiva = NULL;
 			if (FarmhouseBuilt()){
 				opcoes = InsertOption(opcoes, 'p', "Plant", 0, 0);
 			}
