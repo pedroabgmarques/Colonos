@@ -102,9 +102,8 @@ ALLEGRO_COLOR RED, BLACK, ORANGE, GREEN, YELLOW, GREY, WHITE;
 float offsetX = 0;
 float offsetY = 0;
 
-int fundoX, fundoY;
-fundoX = 20;
-fundoY = DISPLAYHEIGHT - 100;
+int fundoX = 20;
+int fundoY = DISPLAYHEIGHT - 100;
 
 //limitador de input do teclado
 int KBLimit = 5;
@@ -659,6 +658,30 @@ Character RemoveCharacter(Character enderecoInicioLista, Character boneco){
 		//Lista vazia
 		return enderecoInicioLista;
 	}
+}
+
+//Devolve a posicao X do edificio headquarters
+int XHeadQuarters(){
+	for (int i = 0; i < MAPWIDTH; i++){
+		for (int j = 0; j < MAPHEIGHT; j++){
+			if (mapDef[j][i][0] == 35){
+				return i;
+			}
+		}
+	}
+	return 0;
+}
+
+//Devolve a posicao Y do edificio headquarters
+int YHeadQuarters(){
+	for (int i = 0; i < MAPWIDTH; i++){
+		for (int j = 0; j < MAPHEIGHT; j++){
+			if (mapDef[j][i][0] == 35){
+				return j;
+			}
+		}
+	}
+	return 0;
 }
 
 //Cria ou atualiza a matriz de searchnodes
@@ -1646,29 +1669,7 @@ bool AlmostEqualRelative(float A, float B)
 	return false;
 }
 
-//Devolve a posicao X do edificio headquarters
-int XHeadQuarters(){
-	for (int i = 0; i < MAPWIDTH; i++){
-		for (int j = 0; j < MAPHEIGHT; j++){
-			if (mapDef[j][i][0] == 35){
-				return i;
-			}
-		}
-	}
-	return 0;
-}
 
-//Devolve a posicao Y do edificio headquarters
-int YHeadQuarters(){
-	for (int i = 0; i < MAPWIDTH; i++){
-		for (int j = 0; j < MAPHEIGHT; j++){
-			if (mapDef[j][i][0] == 35){
-				return j;
-			}
-		}
-	}
-	return 0;
-}
 
 void VerificarEnergia(Character endereco){
 	if (endereco->energia <= 20)
@@ -3273,6 +3274,7 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 		fclose(data);
 	
 }
+
 
 //Load do estado do mapa guardado
 void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
