@@ -31,6 +31,7 @@ int loadUIactive = 1;//0- desactivada, 1 - activo
 int quantidadeEdificios;
 int quantidadeColonos;
 int numeroTarefas;
+int quantidadeQuintas;
 //Criar um display para o Allegro
 ALLEGRO_DISPLAY *display = NULL;
 
@@ -3204,6 +3205,16 @@ void removerTarefas(Character endereco)
 		
 
 }
+//contar numero de quintas
+int contarQuintas(Farm endereco)
+{
+	int contador = 0;
+	while (endereco != NULL)
+	{
+		contador++;
+	}
+	return contador;
+}
 //Guardar estado actual do mapa
 void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 {
@@ -3270,6 +3281,22 @@ void saveMap(int map[MAPWIDTH][MAPHEIGHT][3])
 			
 			colonosAux = colonosAux->next;
 			
+		}
+		//guardar quintas
+		Farm farmAux = quintas;
+		int numeroQuintas;
+		numeroQuintas = contarQuintas(farmAux);
+		fprintf(data, "%d\n", numeroQuintas);
+		while (farmAux != NULL)
+		{
+			fprintf(data, "%d\n", farmAux->i);
+			fprintf(data, "%d\n", farmAux->j);
+			fprintf(data, "%d\n", farmAux->minTimer);
+			fprintf(data, "%s\n", farmAux->name);
+			fprintf(data, "%d\n", farmAux->phase);
+			fprintf(data, "%d\n", farmAux->timer);
+			fprintf(data, "%d\n", farmAux->type);
+			farmAux = farmAux->next;
 		}
 		fclose(data);
 	
@@ -3381,6 +3408,31 @@ void loadMap(/*int map[MAPWIDTH][MAPHEIGHT][3]*/)
 			bonequinhos->y = WorldToPixel(posicaoY, 1);
 			quantidadeColonos--;
 		}
+		fscanf(data, "%d\n", &quantidadeQuintas);
+		if (quantidadeQuintas > 0)
+		{
+			quintas=InsertFarm(quintas, 0, 0, 0);
+			fscanf(data, "%d\n", &quintas->i);
+			fscanf(data, "%d\n", &quintas->j);
+			fscanf(data, "%d\n", &quintas->minTimer);
+			fscanf(data, "%s\n", &quintas->name);
+			fscanf(data, "%d\n", &quintas->phase);
+			fscanf(data, "%d\n", &quintas->timer);
+			fscanf(data, "%d\n", &quintas->type);
+		}
+		Farm farmAux = quintas;
+		for (int z = 0; z < quantidadeQuintas-1; z++)
+		{
+			farmAux=InsertFarm(quintas, 0, 0, 0);
+			fscanf(data, "%d\n", &farmAux->i);
+			fscanf(data, "%d\n", &farmAux->j);
+			fscanf(data, "%d\n", &farmAux->minTimer);
+			fscanf(data, "%s\n", &farmAux->name);
+			fscanf(data, "%d\n", &farmAux->phase);
+			fscanf(data, "%d\n", &farmAux->timer);
+			fscanf(data, "%d\n", &farmAux->type);
+		}
+
 		fclose(data);
 	}
 	
