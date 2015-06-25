@@ -1289,31 +1289,31 @@ Farm InsertFarm(Farm endereco, int j, int i, int type){
 	switch (type)
 	{
 	case 14:
-		farm->minTimer = 4000;
+		farm->minTimer = 8000;
 		farm->name = _strdup("Beterraba");
 		break;
 	case 17:
-		farm->minTimer = 3000;
+		farm->minTimer = 6000;
 		farm->name = _strdup("Cenoura");
 		break;
 	case 20:
-		farm->minTimer = 5000;
+		farm->minTimer = 10000;
 		farm->name = _strdup("Nabo");
 		break;
 	case 23:
-		farm->minTimer = 3000;
+		farm->minTimer = 6000;
 		farm->name = _strdup("Batata");
 		break;
 	case 26:
-		farm->minTimer = 2500;
+		farm->minTimer = 5000;
 		farm->name = _strdup("Pimento");
 		break;
 	case 29:
-		farm->minTimer = 1500;
+		farm->minTimer = 3500;
 		farm->name = _strdup("Morango");
 		break;
 	case 32:
-		farm->minTimer = 4000;
+		farm->minTimer = 8000;
 		farm->name = _strdup("Milho");
 		break;
 	default:
